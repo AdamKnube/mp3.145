@@ -2,7 +2,7 @@
 #
 
 # Global Variables (change these if you must)
-_log_level_ = 3
+_log_level_ = 2
 _log_file_ = './mp3145.log'
 _server_port_ = 3145
 _server_address_ = '0.0.0.0'
@@ -22,14 +22,12 @@ import threading
 import socketserver
 from time import sleep
 
-# The logger
-_log_dev_ = open(_log_file_, 'a')
+# The logger / printer
 def dprint(data = ''):
-	global _log_dev_
+	global _log_file_
 	global _log_level_
-	global _LEVEL_NONE_
-	global _LEVEL_FILE_
 	if (_log_level_ > 0):
+		_log_dev_ = open(_log_file_, 'a')
 		print(data, end = '', file = _log_dev_)
 	if (_log_level_ > 1):
 		print(data, end = '')
