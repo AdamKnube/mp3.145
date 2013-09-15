@@ -230,6 +230,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				self.request.sendall(b'Goodbye.\n')
 				dprint('Disconnecting ' + self.client_address[0] + '\n')
 				self.active = 0
+				
 dprint('Starting TCP server...\n')
 server = socketserver.TCPServer(('0.0.0.0', 3145), MyTCPHandler)
 dprint('mp3.145 is ready.\n')
