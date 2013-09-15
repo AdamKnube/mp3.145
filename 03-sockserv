@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 #
 
-# Global Variables (change these)
+# Global Variables (change these if you must)
 _log_level_ = 3
 _log_file_ = './mp3145.log'
-_server_port_ = '3145'
+_server_port_ = 3145
 _server_address_ = '0.0.0.0'
 
 #----------------------------------------------------------
@@ -29,9 +29,9 @@ def dprint(data = ''):
 	global _log_level_
 	global _LEVEL_NONE_
 	global _LEVEL_FILE_
-	if (_log_level_ > _LEVEL_NONE_):
+	if (_log_level_ > 0):
 		print(data, end = '', file = _log_dev_)
-	if (_log_level_ > _LEVEL_FILE_):
+	if (_log_level_ > 1):
 		print(data, end = '')
 	
 # The pygame backend
