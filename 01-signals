@@ -1,0 +1,230 @@
+#!/usr/bin/python
+#
+# A raspberry pi mp3 player with support for 2 inputs and scrolling song names on an L.C.D.
+#
+# - Harry L 2013
+#
+
+# Memory saving 
+DOLCD = 0									# debug mode
+
+# Imports
+import os as OS									# for listdir() to make the playlist
+import signal as SIG								# for keyboard button emulation
+import random as RAND								# for shuffling
+import pygame as PLAYER								# for the musical workhorse
+import threading as THREADER							# for scrolling L.C.D. text
+from time import sleep as SLEEP							# for singulating button presses
+from datetime import datetime as DATER						# for timestamping messages
+if (DOLCD == 1):
+	import RPi.GPIO as GPIO							# for RPi I/O
+	from Adafruit_CharLCD import Adafruit_CharLCD				# for using the L.C.D.
+
+# Globals
+DEBUG = 0
+ACTIVE = 1									# kill switch
+SHUFIO = 4									# 'shuffle' input
+NEXTIO = 18									# 'next' input
+SHUFFLE = 1									# shuffle switch
+PLAYING = 0									# music playing switch
+SHOWNAME = 1
+THISSONG = -1									# index of current song
+LOCKTIME = 0.25									# amount of time we lock out a button after pressing
+SCROLLTIME = 0.25								# amount of time between scrolling text movement
+LOGFILE = '/var/log/mp3-145.log'						# name of the log file
+MP3DIR = '/music'								# name of the mp3 directory
+PLAYLIST = sorted(OS.listdir(MP3DIR))						# initializes the playlist
+LASTSONG = len(PLAYLIST)							# sets the last song in the playlist for looping
+if (DOLCD == 1):
+	GPIO.setmode(GPIO.BCM)							# sets the GPIO mode
+	LCD = Adafruit_CharLCD()						# the main L.C.D. interface
+	GPIO.setup(NEXTIO, GPIO.IN)						# sets up the 'next' button
+	GPIO.setup(SHUFIO, GPIO.IN)						# sets up the 'shuffle' button
+
+# Text formatter for the L.C.D.
+def lcdify(data, resetScroll = 0, increment = 0):
+	if (len(data) <= 16):
+		return data
+	elif (resetScroll == 1):
+		lcdify.counter = -1
+		return data[:16]
+	else:
+		if (lcdify.counter > len(data)):
+			lcdify.counter = -1
+		elif (resetScroll != 1):
+			lcdify.counter += increment
+	data += '   '
+	poptext = data[:lcdify.counter]
+	newtext = data[lcdify.counter+1:] + poptext
+	return newtext[:16]
+		
+# Resets and clears the L.C.D.
+def resetLCD():
+	global LCD
+	LCD.begin(16,1)
+	LCD.clear()
+	
+# Debug printer
+def dPrint(data, iforce = 0, resetScroll = 0):
+	global DEBUG
+	global LOGFILE
+	global SHOWNAME
+	stamp = '[' + str(DATER.time(DATER.now())) + '] '
+	if ((iforce == 1) or (DEBUG == 1)):
+		print(stamp + data)
+		dfile = open(LOGFILE, 'a')
+		dfile.write(stamp + data + '\n')
+		dfile.close()
+	elif ((iforce == 7) and (SHOWNAME == 1)):
+		print(stamp + data)
+
+# LCD printer		
+def lcdPrint(data, resetScroll = 0):
+	global DOLCD
+	if (DOLCD == 0):
+		return 0
+	part1 = data.partition(' - ')[0]
+	part2 = data.partition(' - ')[2].replace('.mp3', '')
+	lcdata = lcdify(part1, resetScroll) + '\n' + lcdify(part2, resetScroll, 1)
+	if (resetScroll == 1):
+		dPrint('Resetting LCD: ' + data)
+		resetLCD()
+		LCD.message('%s' % ( lcdata ) )
+	elif ((len(part1) > 16) or (len(part2) > 16)):
+		dPrint('Running LCD Scroll: ' + lcdata.replace('\n', ' - ')) 
+		resetLCD()
+		LCD.message('%s' % ( lcdata ) )
+
+# LCD thread
+class commandParser(THREADER.Thread):
+	def __init__(self):
+		THREADER.Thread.__init__(self)		
+		self.alive = 1
+		self.thecmd = ''
+	def setDie(self):
+		self.alive = 0		
+	def run(self):
+		while (self.alive):
+			self.thecmd = input("Command (h for help): ")
+			if (self.thecmd == "h"):
+				dPrint("Commands:")
+				dPrint("---------")
+				dPrint("p - play/pause")
+				dPrint("n - next")
+				dPrint("s - toggle shuffle")
+			elif (self.thecmd == "n"):
+				global NEXTIO
+				doButton(NEXTIO)
+			elif (self.thecmd == "s"):
+				global SHUFIO
+				doButton(SHUFIO)
+			elif (self.thecmd == "p"):
+				global PLAYING
+				if (PLAYING == 1):
+					PLAYING = 0
+				else:
+					PLAYING = 1
+			else:
+				dPrint("Unknown command: " + thecmd)
+						
+class scrollText(THREADER.Thread):
+	global SLEEP
+	global PLAYLIST
+	global THISSONG
+	global SCROLLTIME
+	def __init__(self):
+		THREADER.Thread.__init__(self)
+		self.last = ''
+		self.alive = 1
+		self.spam = 0
+	def setDie(self):
+		self.alive = 0
+	def run(self):			
+		while (self.alive):
+			if ((THISSONG == -1) and (self.spam == 0)):
+				lcdPrint('mp3.145 - Ready to Rock', 1)
+				self.spam = 1
+			elif (THISSONG >= 0):
+				if (self.last != PLAYLIST[THISSONG]):	
+					self.last = PLAYLIST[THISSONG]
+					lcdPrint(PLAYLIST[THISSONG], 1)
+				else:
+					lcdPrint(PLAYLIST[THISSONG])
+			SLEEP(SCROLLTIME)
+
+# Song skipper
+def playNext():
+	global SHUFFLE
+	global PLAYING
+	global THISSONG
+	global LASTSONG
+	PLAYING = 1
+	if (SHUFFLE == 1):
+		THISSONG = RAND.randrange(LASTSONG)
+	else:
+		THISSONG += 1
+		if (THISSONG >= LASTSONG):
+			THISSONG = THISSONG - LASTSONG
+	if (PLAYER.mixer.music.get_busy()):
+		PLAYER.mixer.music.stop()
+	PLAYER.mixer.music.load(OS.path.join(MP3DIR, PLAYLIST[THISSONG]))
+	PLAYER.mixer.music.play()
+	dPrint(PLAYLIST[THISSONG], 7)
+	
+# Button events
+def doButton(io = 0):
+	global NEXTIO
+	global SHUFIO
+	global SHUFFLE
+	global LOCKTIME
+	dPrint('Got #' + str(io) + ' button press')
+	if (io == NEXTIO):
+		playNext()
+	elif (io == SHUFIO):
+		if (SHUFFLE == 1):			
+			SHUFFLE = 0
+			dPrint('Shuffle disabled', 1)
+		else:			
+			SHUFFLE = 1
+			dPrint('Shuffle enabled', 1)
+	SLEEP(LOCKTIME)
+	
+# Signal handler
+def sigSnag(signal, frame):
+	if (signal == SIG.SIGINT):
+		global NEXTIO
+		doButton(NEXTIO)
+	elif (signal == SIG.SIGQUIT):
+		global SHUFIO
+		doButton(SHUFIO)
+		
+# Do-it-to-it
+PLAYER.mixer.init()
+if (DOLCD == 1):
+	resetLCD()
+	lcdThread = scrollText()
+	lcdThread.start()	
+SIG.signal(SIG.SIGINT, sigSnag)
+SIG.signal(SIG.SIGQUIT, sigSnag)
+cmdThread = commandParser()
+dPrint('mp3.145 running.',1)
+cmdThread.start()
+while (ACTIVE):
+	if (DOLCD == 1):
+		if (GPIO.input(NEXTIO) == True):
+			doButton(NEXTIO)
+		if (GPIO.input(SHUFIO) == True):
+			doButton(SHUFIO)
+	if ((PLAYER.mixer.music.get_busy() == 0) and (PLAYING == 1)):
+		playNext()
+	elif ((PLAYER.mixer.music.get_busy() == 1) and (PLAYING == 0)):
+		PLAYER.mixer.music.stop()
+	
+dPrint('mp3.145 stopping...', 1)
+if (DOLCD == 1):
+	lcdThread.setDie()
+	lcdThread.join()
+cmdThread.setDie()
+cmdThread.join()
+dPrint('mp3.145 stopped.', 1)
+

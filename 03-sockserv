@@ -1,0 +1,236 @@
+#!/usr/bin/python3
+#
+
+import os 
+import re
+import random
+import pygame
+import threading
+import socketserver
+from time import sleep
+	
+_LEVEL_NONE_ = 0
+_LEVEL_FILE_ = 1
+_LEVEL_SHOW_ = 2
+
+_log_lev_ = _LEVEL_SHOW_
+_log_fil_ = '/root/mp3145'
+_log_dev_ = open(_log_fil_, 'a')
+
+def dprint(data = ''):
+	global _log_dev_
+	global _log_lev_
+	global _LEVEL_NONE_
+	global _LEVEL_FILE_
+	if (_log_lev_ > _LEVEL_NONE_):
+		print(data, end = '', file = _log_dev_)
+	if (_log_lev_ > _LEVEL_FILE_):
+		print(data, end = '')
+	
+dprint('Loading music thread...\n')
+class musicThread(threading.Thread):
+	def __init__(self, music_directory):
+		threading.Thread.__init__(self)		
+		self.alive = 1
+		self.force = -1
+		self.shuffle = 1
+		self.playing = 0
+		self.current = -1
+		self.volume = 0.1
+		self.previous = -1		
+		pygame.mixer.init()
+		self.musicdir = music_directory
+		self.playlist = sorted(os.listdir(self.musicdir))	
+		self.lastsong = len(self.playlist)
+		self.setVol(2, 10)
+	def getList(self):
+		return self.playlist
+	def getVol(self):
+		return str(self.volume * 100)
+	def setVol(self, upordown = -1, forcevol = 10):
+		newvol = self.volume
+		if (upordown == 2):
+			newvol = (forcevol / 100)
+		elif (upordown == 1):
+			newvol += 0.1
+		elif (upordown == -1):
+			newvol -= 0.1
+		if (newvol > 1.0):
+			newvol = 1.0
+		elif (newvol < 0.0):
+			newvol = 0.0
+		pygame.mixer.music.set_volume(newvol)
+		self.volume = pygame.mixer.music.get_volume()
+		return str(self.volume * 100)
+	def setShuffle(self):
+		if (self.shuffle == 0):
+			self.shuffle = 1
+		else:
+			self.shuffle = 0
+		return self.shuffle
+	def setPlay(self):
+		if (self.playing == 0):
+			self.playing = 1
+			while (pygame.mixer.music.get_busy() != 1):
+				sleep(0.1)
+			return self.current
+		else:
+			self.playing = 0
+		return self.playing
+	def setDie(self):
+		self.playing = 0
+		sleep(1)
+		self.alive = 0
+	def setForce(self, force):
+		self.force = force
+		if (force > 0):
+			return self.playlist[self.force]
+	def playLast(self):
+		if (self.shuffle == 1):
+			self.setForce(self.previous)
+			return self.playNext()
+		else:
+			self.setForce(self.current - 1)
+			return self.playNext()
+	def playNext(self, replay = 0):
+		if (replay == 0):
+			self.previous = self.current
+			if (self.force == -1):
+				if (self.shuffle == 1):
+					self.current = random.randrange(self.lastsong)
+				else:
+					self.current += 1
+					if (self.current >= self.lastsong):
+						self.current = self.current - self.lastsong
+			else:
+				self.current = self.force
+				self.force = -1
+		
+		if (pygame.mixer.music.get_busy()):
+			pygame.mixer.music.stop()
+		pygame.mixer.music.load(os.path.join(self.musicdir, self.playlist[self.current]))
+		pygame.mixer.music.play()	
+		return str(self.current) + ': ' + self.playlist[self.current]
+	def run(self):
+		flag = 0
+		while (self.alive):
+			if ((pygame.mixer.music.get_busy() == 0) and (self.playing == 1)):
+				dprint(self.playNext(flag) + '\n')
+				flag = 0
+			elif ((pygame.mixer.music.get_busy() == 1) and (self.playing == 0)):
+				pygame.mixer.music.stop()
+				flag = 1
+			sleep(0.5)
+
+dprint('Starting music thread...\n')
+music = musicThread('/music')
+music.start()
+dprint('Loading TCP server...\n')
+class MyTCPHandler(socketserver.BaseRequestHandler):
+	def handle(self):
+		self.active = 1
+		dprint(self.client_address[0] + ' has connected.\n')
+		while (self.active):
+			global music			
+			self.request.sendall(b'Enter command, h for help: ')
+			self.cmd = self.request.recv(1024).strip().decode('utf-8')
+			dprint('Command: <' + self.cmd + '> From: [' + self.client_address[0] + ']\n')
+			plist = music.getList()
+			if (self.cmd == 'h'):				
+				dprint('Sending help.\n')
+				self.request.sendall(b'Commands:\n')
+				self.request.sendall(b'---------\n')
+				self.request.sendall(b'p - play/stop\n')
+				self.request.sendall(b'n - skip/next\n')
+				self.request.sendall(b'b - back/previous\n')
+				self.request.sendall(b'r - random on/off\n')			
+				self.request.sendall(b's - search songs\n')
+				self.request.sendall(b'f - force song\n')
+				self.request.sendall(b'l - list all songs\n')
+				self.request.sendall(b'u - volume +10\n')
+				self.request.sendall(b'd - volume -10\n')
+				self.request.sendall(b'v - custom volume\n')
+				self.request.sendall(b'x - exit\n')
+			elif (self.cmd == 'r'):
+				if (music.setShuffle()):
+					dprint('Random: On.\n')
+					self.request.sendall(b'Random: On.\n')
+				else:
+					dprint('Random: Off.\n')
+					self.request.sendall(b'Random: Off.\n')
+			elif (self.cmd == 'p'):
+				if (music.setPlay()):
+					dprint('Play.\n')
+					self.request.sendall(b'Play.\n')
+				else:
+					dprint('Stop.\n')
+					self.request.sendall(b'Stop.\n')
+			elif (self.cmd == 'n'):
+				tmp = music.playNext() + '\n'
+				dprint(tmp)
+				self.request.sendall(tmp.encode('utf-8'))
+			elif (self.cmd == 'b'):
+				tmp = music.playLast() + '\n'
+				dprint(tmp)
+				self.request.sendall(tmp.encode('utf-8'))
+			elif (self.cmd == 'l'):
+				dprint('Sending playlist.\n')
+				for x in range(0, len(plist)):
+					self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'\n')
+			elif (self.cmd == 's'):
+				fff = 0;
+				self.request.sendall(b'Search string: ')
+				testme = self.request.recv(1024).strip().decode('utf-8')
+				dprint('Searching for: ' + testme + '\n')
+				s = re.compile(testme, re.IGNORECASE)		
+				for x in range(0, len(plist)):
+					if (s.search(plist[x])):
+						self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'\n')
+						fff += 1
+				if (fff == 0):
+					self.request.sendall(b'No results found.\n')
+					dprint('Nothing found.\n')
+				else:
+					dprint('Found ' + str(fff) + ' items.\n')
+			elif (self.cmd == 'f'):
+				while True:
+					try:
+						self.request.sendall(b'Force song: ')
+						forceme = int(self.request.recv(1024).strip().decode('utf-8'))
+						if ((forceme < 0) or (forceme >= len(plist))):
+							int('fail')
+						break
+					except ValueError:
+						self.request.sendall(b'Invalid; Try Again\n')
+				tmp = 'Queued: ' + music.setForce(forceme) + '\n'	
+				dprint(tmp)
+				self.request.sendall(tmp.encode('utf-8'))
+			elif (self.cmd == 'u'):
+				tmp = 'Volume: ' + music.setVol(1) + '\n'
+				dprint(tmp)
+				self.request.sendall(tmp.encode('utf-8'))
+			elif (self.cmd == 'd'):
+				tmp = 'Volume: ' + music.setVol() + '\n'
+				dprint(tmp)
+				self.request.sendall(tmp.encode('utf-8'))
+			elif (self.cmd == 'v'):
+				while True:
+					try:
+						self.request.sendall(b'New volume (current=' + music.getVol().encode('utf-8') + b') [1-100] : ')
+						newvol = int(self.request.recv(1024).strip().decode('utf-8'))
+						if ((newvol < 0) or (newvol > 100)):
+							int('fail')
+						tmp = 'Volume: ' + str(music.setVol(2, newvol)) + '\n'
+						dprint(tmp)
+						self.request.sendall(tmp.encode('utf-8'))
+						break
+					except ValueError:
+						self.request.sendall(b'Invalid; Try Again.\n')
+			elif (self.cmd == 'x'):
+				self.request.sendall(b'Goodbye.\n')
+				dprint('Disconnecting ' + self.client_address[0] + '\n')
+				self.active = 0
+dprint('Starting TCP server...\n')
+server = socketserver.TCPServer(('0.0.0.0', 3145), MyTCPHandler)
+dprint('mp3.145 is ready.\n')
+server.serve_forever()

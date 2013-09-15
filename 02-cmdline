@@ -1,0 +1,176 @@
+#!/usr/bin/python3
+#
+
+import os 
+import re
+import random
+import pygame
+import threading
+from time import sleep
+	
+class musicThread(threading.Thread):
+	def __init__(self, music_directory):
+		threading.Thread.__init__(self)		
+		self.alive = 1
+		self.force = -1
+		self.shuffle = 1
+		self.playing = 0
+		self.current = -1
+		self.volume = 0.1
+		self.previous = -1		
+		pygame.mixer.init()
+		self.musicdir = music_directory
+		self.playlist = sorted(os.listdir(self.musicdir))	
+		self.lastsong = len(self.playlist)
+		self.setVol(2, 10)
+	def getList(self):
+		return self.playlist
+	def setVol(self, upordown = -1, forcevol = 10):
+		newvol = self.volume
+		if (upordown == 2):
+			newvol = (forcevol / 100)
+		elif (upordown == 1):
+			newvol += 0.1
+		elif (upordown == -1):
+			newvol -= 0.1
+		if (newvol > 1.0):
+			newvol = 1.0
+		elif (newvol < 0.0):
+			newvol = 0.0
+		pygame.mixer.music.set_volume(newvol)
+		self.volume = pygame.mixer.music.get_volume()
+		return (self.volume * 100)
+	def setShuffle(self):
+		if (self.shuffle == 0):
+			self.shuffle = 1
+		else:
+			self.shuffle = 0
+		return self.shuffle
+	def setPlay(self):
+		if (self.playing == 0):
+			self.playing = 1
+		else:
+			self.playing = 0
+		return self.playing
+	def setDie(self):
+		self.playing = 0
+		sleep(1)
+		self.alive = 0
+	def setForce(self, force):
+		self.force = force
+		if (force > 0):
+			return self.playlist[self.force]
+	def playLast(self):
+		if (self.shuffle == 1):
+			self.setForce(self.previous)
+			return self.playNext()
+		else:
+			self.setForce(self.current - 1)
+			return self.playNext()
+	def playNext(self, replay = 0):
+		if (replay == 0):
+			self.previous = self.current
+			if (self.force == -1):
+				if (self.shuffle == 1):
+					self.current = random.randrange(self.lastsong)
+				else:
+					self.current += 1
+					if (self.current >= self.lastsong):
+						self.current = self.current - self.lastsong
+			else:
+				self.current = self.force
+				self.force = -1
+		
+		if (pygame.mixer.music.get_busy()):
+			pygame.mixer.music.stop()
+		pygame.mixer.music.load(os.path.join(self.musicdir, self.playlist[self.current]))
+		pygame.mixer.music.play()	
+		return str(self.current) + ': ' + self.playlist[self.current]
+	def run(self):
+		flag = 0
+		while (self.alive):
+			if ((pygame.mixer.music.get_busy() == 0) and (self.playing == 1)):
+				print(self.playNext(flag))
+				flag = 0
+				print('Enter Command (h for help):')
+			elif ((pygame.mixer.music.get_busy() == 1) and (self.playing == 0)):
+				pygame.mixer.music.stop()
+				flag = 1
+			sleep(0.5)
+
+music = musicThread('/music')
+music.start()
+active = 1
+while (active):
+	plist = music.getList()
+	cmd = input("Enter Command (h for help):\n")
+	if (cmd == 'h'):
+		print('Commands:')
+		print('---------')
+		print('p - play/stop')
+		print('n - skip/next')
+		print('b - back/previous')
+		print('r - random on/off')			
+		print('s - search songs')
+		print('f - force song')
+		print('l - list all songs')
+		print('u - volume +10')
+		print('d - volume -10')
+		print('v - custom volume')
+		print('x - exit')
+	elif (cmd == 'r'):
+		if (music.setShuffle()):
+			print('Random: On.')
+		else:
+			print('Random: Off.')
+	elif (cmd == 'p'):
+		if (music.setPlay()):
+			print('Play.')
+		else:
+			print('Stop.')
+	elif (cmd == 'n'):
+		print(music.playNext())
+	elif (cmd == 'b'):
+		print(music.playLast())
+	elif (cmd == 'l'):
+		for x in range(0, len(plist)):
+			print(str(x) + ': ' + plist[x])
+	elif (cmd == 's'):
+		fff = 0;
+		testme = input('Search Songs: ')
+		s = re.compile(testme, re.IGNORECASE)		
+		for x in range(0, len(plist)):
+			if (s.search(plist[x])):
+				print(str(x) + ': ' + plist[x])
+				fff += 1
+		if (fff == 0):
+			print('No results found.')
+	elif (cmd == 'f'):
+		while True:
+			try:
+				forceme = int(input('Force Song #: '))
+				if ((forceme < 0) or (forceme >= len(plist))):
+					int('fail')
+				break
+			except ValueError:
+				print('Invalid; Try Again')	
+		print('Queued: ' + music.setForce(forceme))
+	elif (cmd == 'u'):
+		print('Volume: ' + str(music.setVol(1)))
+	elif (cmd == 'd'):
+		print('Volume: ' + str(music.setVol()))
+	elif (cmd == 'v'):
+		while True:
+			try:
+				newvol = int(input('New Volume [0-100]: '))
+				if ((newvol < 0) or (newvol > 100)):
+					int('fail')
+				print('Volume: ' + str(music.setVol(2, newvol)))
+				break
+			except ValueError:
+				print('Invalid; Try Again.')
+	elif (cmd == 'x'):
+		print('Shutting down...')
+		music.setDie()
+		music.join()
+		active = 0
