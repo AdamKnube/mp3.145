@@ -1,6 +1,19 @@
 #!/usr/bin/python3
 #
 
+# Global Variables (change these)
+_log_level_ = 3
+_log_file_ = './mp3145.log'
+_server_port_ = '3145'
+_server_address_ = '0.0.0.0'
+
+#----------------------------------------------------------
+#
+# DO NOT TOUCH BELOW THIS POINT !!!!!!!!!
+#
+#----------------------------------------------------------
+
+# Imports
 import os 
 import re
 import random
@@ -8,27 +21,20 @@ import pygame
 import threading
 import socketserver
 from time import sleep
-	
-_LEVEL_NONE_ = 0
-_LEVEL_FILE_ = 1
-_LEVEL_SHOW_ = 2
 
-_server_port_ = '3145'
-_server_addr_ = '0.0.0.0'
-_log_lev_ = _LEVEL_SHOW_
-_log_fil_ = '/root/mp3145'
-_log_dev_ = open(_log_fil_, 'a')
-
+# The logger
+_log_dev_ = open(_log_file_, 'a')
 def dprint(data = ''):
 	global _log_dev_
-	global _log_lev_
+	global _log_level_
 	global _LEVEL_NONE_
 	global _LEVEL_FILE_
-	if (_log_lev_ > _LEVEL_NONE_):
+	if (_log_level_ > _LEVEL_NONE_):
 		print(data, end = '', file = _log_dev_)
-	if (_log_lev_ > _LEVEL_FILE_):
+	if (_log_level_ > _LEVEL_FILE_):
 		print(data, end = '')
 	
+# The pygame backend
 dprint('Loading music thread...\n')
 class musicThread(threading.Thread):
 	def __init__(self, music_directory):
@@ -123,10 +129,11 @@ class musicThread(threading.Thread):
 				pygame.mixer.music.stop()
 				flag = 1
 			sleep(0.5)
-
 dprint('Starting music thread...\n')
 music = musicThread('/music')
 music.start()
+
+# The socketserver interface
 dprint('Loading TCP server...\n')
 class MyTCPHandler(socketserver.BaseRequestHandler):
 	def handle(self):
@@ -232,8 +239,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				self.request.sendall(b'Goodbye.\n')
 				dprint('Disconnecting ' + self.client_address[0] + '\n')
 				self.active = 0
-				
+	
+# Do-it-to-it			
 dprint('Starting TCP server...\n')
-server = socketserver.TCPServer((_server_addr_, _server_port_), MyTCPHandler)
+server = socketserver.TCPServer((_server_address_, _server_port_), MyTCPHandler)
 dprint('mp3.145 is ready.\n')
 server.serve_forever()
+music.setDie()
+music.join()
