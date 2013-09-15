@@ -13,6 +13,8 @@ _LEVEL_NONE_ = 0
 _LEVEL_FILE_ = 1
 _LEVEL_SHOW_ = 2
 
+_server_port_ = '3145'
+_server_addr_ = '0.0.0.0'
 _log_lev_ = _LEVEL_SHOW_
 _log_fil_ = '/root/mp3145'
 _log_dev_ = open(_log_fil_, 'a')
@@ -232,6 +234,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				self.active = 0
 				
 dprint('Starting TCP server...\n')
-server = socketserver.TCPServer(('0.0.0.0', 3145), MyTCPHandler)
+server = socketserver.TCPServer((_server_addr_, _server_port_), MyTCPHandler)
 dprint('mp3.145 is ready.\n')
 server.serve_forever()
