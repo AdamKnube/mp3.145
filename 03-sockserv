@@ -2,10 +2,10 @@
 #
 
 # Global Variables (change these if you must)
-_log_level_ = 2
-_log_file_ = './mp3145.log'
+_log_level_ = 0
+_log_file_ = '/var/log/mp3145.log'
 _server_port_ = 3145
-_server_address_ = '0.0.0.0'
+_server_address_ = '127.0.0.1'
 
 #----------------------------------------------------------
 #
@@ -48,7 +48,10 @@ class musicThread(threading.Thread):
 		self.musicdir = music_directory
 		self.playlist = sorted(os.listdir(self.musicdir))	
 		self.lastsong = len(self.playlist)
-		self.setVol(2, 10)
+		self.setVol(2, 18)
+	def getStatus(self):
+		sep = '__--__'
+		return str(self.playing) + sep + str(self.volume) + sep + str(self.random) + sep + str(self.force) + sep + str(self.current)
 	def getList(self):
 		return self.playlist
 	def getVol(self):
@@ -139,7 +142,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 		dprint(self.client_address[0] + ' has connected.\n')
 		while (self.active):
 			global music			
-			self.request.sendall(b'Enter command, h for help: ')
+			#self.request.sendall(b'Enter command, h for help: ')
 			self.cmd = self.request.recv(1024).strip().decode('utf-8')
 			dprint('Command: <' + self.cmd + '> From: [' + self.client_address[0] + ']\n')
 			plist = music.getList()
@@ -183,10 +186,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 			elif (self.cmd == 'l'):
 				dprint('Sending playlist.\n')
 				for x in range(0, len(plist)):
-					self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'\n')
+					self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'<br>\n')
+				self.request.sendall('__END_OF_LIST__\n')
 			elif (self.cmd == 's'):
 				fff = 0;
-				self.request.sendall(b'Search string: ')
+				self.request.sendall(b'Search string: \n')
 				testme = self.request.recv(1024).strip().decode('utf-8')
 				dprint('Searching for: ' + testme + '\n')
 				s = re.compile(testme, re.IGNORECASE)		
@@ -202,7 +206,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 			elif (self.cmd == 'f'):
 				while True:
 					try:
-						self.request.sendall(b'Force song: ')
+						self.request.sendall(b'Force song: \n')
 						forceme = int(self.request.recv(1024).strip().decode('utf-8'))
 						if ((forceme < 0) or (forceme >= len(plist))):
 							int('fail')
@@ -223,7 +227,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 			elif (self.cmd == 'v'):
 				while True:
 					try:
-						self.request.sendall(b'New volume (current=' + music.getVol().encode('utf-8') + b') [1-100] : ')
+						self.request.sendall(b'New volume (current=' + music.getVol().encode('utf-8') + b') [1-100] : \n')
 						newvol = int(self.request.recv(1024).strip().decode('utf-8'))
 						if ((newvol < 0) or (newvol > 100)):
 							int('fail')
@@ -237,6 +241,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				self.request.sendall(b'Goodbye.\n')
 				dprint('Disconnecting ' + self.client_address[0] + '\n')
 				self.active = 0
+			else:
+				self.request.sendall(b'Unknown command: ' + self.cmd.encode('utf-8') + b'\n')
 	
 # Do-it-to-it			
 dprint('Starting TCP server...\n')

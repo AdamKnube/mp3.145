@@ -12,7 +12,4 @@ Version History:
  + v0.1 - signals: gpio wasn't practical for the garage, added option to diable it (for memory/cpu).
  + v0.2 - cmdline: dropped the gpio and signals in favor of stdin control (read ssh).
  + v0.3 - sockserv: uses the sockserv library to cut out the ssh client (in favor of my own someday).
-
-Todo:
------
- + Build a client which can run on Xwin, Windows, and Android (telnet works for now though).
+ + v0.4 - clients/www: locked the sockserv to 'localhost'; made clients and a web interface.

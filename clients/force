@@ -1,0 +1,26 @@
+#!/usr/bin/python3
+#
+
+import sys
+import socket
+
+cmd = 'f\n'
+
+c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+c.connect(('127.0.0.1', 3145))
+#print('Connected')
+#s = c.recv(1024).strip()
+#print('Recieved: ' + s.decode('utf-8'))
+c.sendall(cmd.encode('utf-8'))
+#print('Data sent.')
+s = c.recv(1024).strip()
+#print('Recieved: ' + s.decode('utf-8'))
+#v = input('Force Song: ')
+v = sys.argv[1]
+c.sendall(v.encode('utf-8'))
+#print('Data sent.')
+s = c.recv(1024).strip()
+print(s.decode('utf-8'))
+c.sendall(b'x\n')
+#print('Shutting down.')
+c.close()

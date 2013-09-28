@@ -1,0 +1,25 @@
+#!/usr/bin/python3
+#
+
+import socket
+
+cmd = 'l\n'
+
+try:
+	c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	c.connect(('127.0.0.1', 3145))
+	#print('Connected')
+	#s = c.recv(1024).strip()
+	#print('Recieved: ' + s.decode('utf-8'))
+	c.sendall(cmd.encode('utf-8'))
+	#print('Data sent.')
+	while (True):
+		s = c.recv(4096).strip().decode('utf-8')
+		if (not s): break
+		print(s)
+	c.sendall(b'x\n')
+	#print('Shutting down.')
+	c.close()
+except:
+	print("Server is down!<br>")
+	exit(1)
