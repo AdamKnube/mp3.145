@@ -6,6 +6,7 @@ _log_level_ = 0
 _log_file_ = '/var/log/mp3145.log'
 _server_port_ = 3145
 _server_address_ = '127.0.0.1'
+_music_dir_ = '/home/mp3/music/Various'
 
 #----------------------------------------------------------
 #
@@ -131,7 +132,7 @@ class musicThread(threading.Thread):
 				flag = 1
 			sleep(0.5)
 dprint('Starting music thread...\n')
-music = musicThread('/music')
+music = musicThread(_music_dir_)
 music.start()
 
 # The socketserver interface
@@ -187,7 +188,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				dprint('Sending playlist.\n')
 				for x in range(0, len(plist)):
 					self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'<br>\n')
-				self.request.sendall('__END_OF_LIST__\n')
+				self.request.sendall(b'__END_OF_LIST__\n')
 			elif (self.cmd == 's'):
 				fff = 0;
 				self.request.sendall(b'Search string: \n')
