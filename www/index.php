@@ -15,6 +15,7 @@
 			elseif ($_GET['r']) { system('/home/mp3/bin/random'); }
 			elseif ($_GET['f']) { system('/home/mp3/bin/force ' . $_GET['song']); }
 			elseif ($_GET['s']) { system('/home/mp3/bin/search ' . $_GET['query']); }
+			elseif ($_GET['v']) { system('/home/mp3/bin/volume ' . $_GET['volume']); }
 			echo '</center><br><br>';
 		?>
 		<form method="GET" action="/index.php">
