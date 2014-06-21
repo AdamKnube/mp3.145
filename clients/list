@@ -16,6 +16,10 @@ try:
 	while (True):
 		s = c.recv(4096).strip().decode('utf-8')
 		if (not s): break
+		x = s.find('__END_OF_LIST__')
+		if (x != -1):
+			print(s[:x])
+			break
 		print(s)
 	c.sendall(b'x\n')
 	#print('Shutting down.')

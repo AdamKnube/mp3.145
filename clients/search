@@ -1,0 +1,34 @@
+#!/usr/bin/python3
+#
+
+import sys
+import socket
+
+cmd = 's\n'
+
+c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+c.connect(('127.0.0.1', 3145))
+#print('Connected')
+#s = c.recv(1024).strip()
+#print('Recieved: ' + s.decode('utf-8'))
+c.sendall(cmd.encode('utf-8'))
+#print('Data sent.')
+s = c.recv(1024).strip()
+#print('Recieved: ' + s.decode('utf-8'))
+#v = input('Search Song: ')
+try:
+	v = sys.argv[1]
+except:
+	exit(0)
+c.sendall(v.encode('utf-8'))
+#print('Data sent.')
+while (True):
+	s = c.recv(4096).strip().decode('utf-8')
+	if (not s): break
+	print(s)
+	x = s.find('Found')
+	if (x != -1):
+		break
+c.sendall(b'x\n')
+#print('Shutting down.')
+c.close()

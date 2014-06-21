@@ -16,7 +16,6 @@ _music_dir_ = '/home/mp3/music/Various'
 
 # Imports
 import os 
-import re
 import random
 import pygame
 import threading
@@ -194,16 +193,12 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				self.request.sendall(b'Search string: \n')
 				testme = self.request.recv(1024).strip().decode('utf-8')
 				dprint('Searching for: ' + testme + '\n')
-				s = re.compile(testme, re.IGNORECASE)		
 				for x in range(0, len(plist)):
-					if (s.search(plist[x])):
-						self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'\n')
+					if (plist[x].find(testme) != -1):
+						self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'<br>\n')
 						fff += 1
-				if (fff == 0):
-					self.request.sendall(b'No results found.\n')
-					dprint('Nothing found.\n')
-				else:
-					dprint('Found ' + str(fff) + ' items.\n')
+				dprint('Found ' + str(fff) + ' items.\n')
+				self.request.sendall(b'Found ' + str(fff).encode('utf-8') + b' items.\n')
 			elif (self.cmd == 'f'):
 				while True:
 					try:
