@@ -194,7 +194,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				testme = self.request.recv(1024).strip().decode('utf-8')
 				dprint('Searching for: ' + testme + '\n')
 				for x in range(0, len(plist)):
-					if (plist[x].find(testme) != -1):
+					if (plist[x].lower().find(testme) != -1):
 						self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'<br>\n')
 						fff += 1
 				dprint('Found ' + str(fff) + ' items.\n')
