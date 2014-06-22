@@ -46,9 +46,20 @@ class musicThread(threading.Thread):
 		self.previous = -1		
 		pygame.mixer.init()
 		self.musicdir = music_directory
+		self.setVol(2, 18)
 		self.playlist = sorted(os.listdir(self.musicdir))	
 		self.lastsong = len(self.playlist)
-		self.setVol(2, 18)
+	def refreshMusic(self):
+		oldcur = self.current
+		if (oldcur != -1):
+			oldcur = self.playlist[self.current]
+		self.playlist = sorted(os.listdir(self.musicdir))
+		self.lastsong = len(self.playlist)
+		if (oldcur != -1):
+			for x in range(0, len(self.playlist)):
+				if (self.playlist[x] == oldcur): 
+					self.current = x
+					break					
 	def getStatus(self):
 		sep = '__--__'
 		return str(self.playing) + sep + str(self.volume) + sep + str(self.random) + sep + str(self.force) + sep + str(self.current)
@@ -121,6 +132,7 @@ class musicThread(threading.Thread):
 		pygame.mixer.music.play()	
 		return str(self.current) + ': ' + self.playlist[self.current]
 	def run(self):
+		refr = 0
 		flag = 0
 		while (self.alive):
 			if ((pygame.mixer.music.get_busy() == 0) and (self.playing == 1)):
@@ -129,7 +141,12 @@ class musicThread(threading.Thread):
 			elif ((pygame.mixer.music.get_busy() == 1) and (self.playing == 0)):
 				pygame.mixer.music.stop()
 				flag = 1
+			refr += 1
+			if (refr == 21):
+				self.refreshMusic()
+				refr = 0
 			sleep(0.5)
+
 dprint('Starting music thread...\n')
 music = musicThread(_music_dir_)
 music.start()
