@@ -40,13 +40,13 @@ class musicThread(threading.Thread):
 		self.alive = 1
 		self.force = -1
 		self.shuffle = 1
-		self.playing = 0
+		self.playing = 1
 		self.current = -1
 		self.volume = 0.1
 		self.previous = -1		
 		pygame.mixer.init()
 		self.musicdir = music_directory
-		self.setVol(2, 18)
+		self.setVol(2, 50)
 		self.playlist = sorted(os.listdir(self.musicdir))	
 		self.lastsong = len(self.playlist)
 	def refreshMusic(self):
@@ -61,8 +61,8 @@ class musicThread(threading.Thread):
 					self.current = x
 					break					
 	def getStatus(self):
-		sep = '__--__'
-		return str(self.playing) + sep + str(self.volume) + sep + str(self.random) + sep + str(self.force) + sep + str(self.current)
+		sep = ':'
+		return str(self.playing) + sep + str(self.volume) + sep + str(self.shuffle) + sep + str(self.force) + sep + self.getCurrent()
 	def getList(self):
 		return self.playlist
 	def getVol(self):
@@ -105,6 +105,7 @@ class musicThread(threading.Thread):
 		self.force = force
 		if (force > 0):
 			return self.playlist[self.force]
+	def getCurrent(self): return str(self.current) + ': ' + self.playlist[self.current]
 	def playLast(self):
 		if (self.shuffle == 1):
 			self.setForce(self.previous)
@@ -130,7 +131,7 @@ class musicThread(threading.Thread):
 			pygame.mixer.music.stop()
 		pygame.mixer.music.load(os.path.join(self.musicdir, self.playlist[self.current]))
 		pygame.mixer.music.play()	
-		return str(self.current) + ': ' + self.playlist[self.current]
+		return self.playlist[self.current].replace('.mp3', '')
 	def run(self):
 		refr = 0
 		flag = 0
@@ -181,19 +182,23 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 			elif (self.cmd == 'r'):
 				if (music.setShuffle()):
 					dprint('Random: On.\n')
-					self.request.sendall(b'Random: On.\n')
+					self.request.sendall(b'Random: On\n')
 				else:
 					dprint('Random: Off.\n')
-					self.request.sendall(b'Random: Off.\n')
+					self.request.sendall(b'Random: Off\n')
 			elif (self.cmd == 'p'):
 				if (music.setPlay()):
 					dprint('Play.\n')
-					self.request.sendall(b'Play.\n')
+					self.request.sendall(b'Play\n')
 				else:
 					dprint('Stop.\n')
-					self.request.sendall(b'Stop.\n')
+					self.request.sendall(b'Stop\n')
 			elif (self.cmd == 'n'):
 				tmp = music.playNext() + '\n'
+				dprint(tmp)
+				self.request.sendall(tmp.encode('utf-8'))
+			elif (self.cmd == 'c'):
+				tmp = music.getStatus() + '\n'
 				dprint(tmp)
 				self.request.sendall(tmp.encode('utf-8'))
 			elif (self.cmd == 'b'):
@@ -202,8 +207,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				self.request.sendall(tmp.encode('utf-8'))
 			elif (self.cmd == 'l'):
 				dprint('Sending playlist.\n')
+				self.request.sendall(b'<table style="font-size: 30px">')
 				for x in range(0, len(plist)):
-					self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'<br>\n')
+					self.request.sendall(b'<tr><td>' + str(x).encode('utf-8') + b'</td><td align=center>' + plist[x].replace('.mp3', '').encode('utf-8') + b'</td></tr>\n')
+				self.request.sendall(b'</table>')
 				self.request.sendall(b'__END_OF_LIST__\n')
 			elif (self.cmd == 's'):
 				fff = 0;
@@ -215,7 +222,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 						self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'<br>\n')
 						fff += 1
 				dprint('Found ' + str(fff) + ' items.\n')
-				self.request.sendall(b'Found ' + str(fff).encode('utf-8') + b' items.\n')
+				self.request.sendall(b'__END_OF_LIST__\n')
 			elif (self.cmd == 'f'):
 				while True:
 					try:
@@ -249,7 +256,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 						self.request.sendall(tmp.encode('utf-8'))
 						break
 					except ValueError:
-						self.request.sendall(b'Invalid; Try Again.\n')
+						self.request.sendall(b'Error: Try Again\n')
 			elif (self.cmd == 'x'):
 				self.request.sendall(b'Goodbye.\n')
 				dprint('Disconnecting ' + self.client_address[0] + '\n')

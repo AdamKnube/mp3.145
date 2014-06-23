@@ -22,13 +22,16 @@ except:
 	exit(0)
 c.sendall(v.encode('utf-8'))
 #print('Data sent.')
+passes = 0
 while (True):
 	s = c.recv(4096).strip().decode('utf-8')
 	if (not s): break
-	print(s)
-	x = s.find('Found')
+	x = s.find('__END_OF_LIST__')
 	if (x != -1):
 		break
+	print(s)
+	passes += 1
+if (passes == 0): print('No results found')
 c.sendall(b'x\n')
 #print('Shutting down.')
 c.close()
