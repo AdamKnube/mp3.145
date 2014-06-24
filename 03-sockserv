@@ -40,13 +40,13 @@ class musicThread(threading.Thread):
 		self.alive = 1
 		self.force = -1
 		self.shuffle = 1
-		self.playing = 1
+		self.playing = 0
 		self.current = -1
 		self.volume = 0.1
 		self.previous = -1		
 		pygame.mixer.init()
 		self.musicdir = music_directory
-		self.setVol(2, 50)
+		self.setVol(2, 60)
 		self.playlist = sorted(os.listdir(self.musicdir))	
 		self.lastsong = len(self.playlist)
 	def refreshMusic(self):
@@ -104,7 +104,7 @@ class musicThread(threading.Thread):
 	def setForce(self, force):
 		self.force = force
 		if (force > 0):
-			return self.playlist[self.force]
+			return self.playlist[self.force].replace('.mp3', '')
 	def getCurrent(self): return str(self.current) + ': ' + self.playlist[self.current]
 	def playLast(self):
 		if (self.shuffle == 1):
