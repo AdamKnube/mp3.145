@@ -221,8 +221,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 					if (plist[x].lower().find(testme) != -1):
 						self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'<br>\n')
 						fff += 1
-				dprint('Found ' + str(fff) + ' items.\n')
 				self.request.sendall(b'__END_OF_LIST__\n')
+				dprint('Found ' + str(fff) + ' items.\n')
 			elif (self.cmd == 'f'):
 				while True:
 					try:

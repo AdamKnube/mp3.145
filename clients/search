@@ -28,6 +28,7 @@ while (True):
 	if (not s): break
 	x = s.find('__END_OF_LIST__')
 	if (x != -1):
+		print(s[:x])
 		break
 	print(s)
 	passes += 1
