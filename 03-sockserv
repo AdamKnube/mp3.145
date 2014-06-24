@@ -62,7 +62,7 @@ class musicThread(threading.Thread):
 					break					
 	def getStatus(self):
 		sep = ':'
-		return str(self.playing) + sep + str(self.volume) + sep + str(self.shuffle) + sep + str(self.force) + sep + self.getCurrent()
+		return str(self.playing) + sep + str(self.shuffle) + sep + str(self.volume) + sep + str(self.force) + sep + self.getCurrent()
 	def getList(self):
 		return self.playlist
 	def getVol(self):
