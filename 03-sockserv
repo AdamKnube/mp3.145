@@ -7,6 +7,8 @@ _log_file_ = '/var/log/mp3145.log'
 _server_port_ = 3145
 _server_address_ = '127.0.0.1'
 _music_dir_ = '/home/mp3/music/Various'
+_auto_start_ = 1
+_start_volume_ = 25
 
 #----------------------------------------------------------
 #
@@ -36,17 +38,19 @@ def dprint(data = ''):
 dprint('Loading music thread...\n')
 class musicThread(threading.Thread):
 	def __init__(self, music_directory):
-		threading.Thread.__init__(self)		
+		threading.Thread.__init__(self)
+		global _auto_start_	
+		global _start_volume_	
 		self.alive = 1
 		self.force = -1
 		self.shuffle = 1
-		self.playing = 0
+		self.playing = _auto_start_
 		self.current = -1
 		self.volume = 0.1
 		self.previous = -1		
 		pygame.mixer.init()
 		self.musicdir = music_directory
-		self.setVol(2, 60)
+		self.setVol(2, _start_volume_)
 		self.playlist = sorted(os.listdir(self.musicdir))	
 		self.lastsong = len(self.playlist)
 	def refreshMusic(self):
