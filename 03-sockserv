@@ -5,8 +5,9 @@
 _log_level_ = 0
 _auto_start_ = 0
 _refresh_rate_ = 21
-_start_volume_ = 0.25
 _server_port_ = 3145
+_start_volume_ = 25
+_config_sep_ = '|-:;:-|'
 _server_address_ = '127.0.0.1'
 _music_dir_ = '/home/mp3/music/Various'
 _log_file_ = '/home/mp3/mp3.145/mp3145.log'
@@ -57,9 +58,9 @@ class musicThread(threading.Thread):
 		self.playlist = sorted(os.listdir(self.musicdir))	
 		self.lastsong = len(self.playlist)
 	def writePersist(self):
-		sep = ':'
+		global _config_sep_
+		data =	str(self.playing) + _config_sep_ + str(self.shuffle) + _config_sep_ + str(self.volume + 0.01) + _config_sep_ + str(self.current) + _config_sep_ + str(self.force)
 		global _persistance_
-		data =	str(self.playing) + sep + str(self.shuffle) + sep + str(self.volume + 0.01) + sep + str(self.current)
 		persist = open(_persistance_, 'w')
 		print(data, end = '', file = persist)
 		persist.close()	
@@ -75,7 +76,6 @@ class musicThread(threading.Thread):
 					self.current = x
 					break					
 	def getStatus(self):
-		sep = ':'
 		retme = ''
 		if (self.playing): retme += 'Playing '
 		else: retme +='Stopped on '
@@ -163,20 +163,26 @@ class musicThread(threading.Thread):
 	def run(self):
 		refr = 0
 		flag = 0
+		initforce = -1
 		global _persistance_
 		if (os.path.isfile(_persistance_)):
+			global _config_sep_
 			persist = open(_persistance_, 'r')
 			conf = persist.readline()
 			persist.close()
 			dprint('Persistance;' + conf)
-			values = conf.split(':')
+			values = conf.split(_config_sep_)
 			self.playing = int(values[0])
 			self.shuffle = int(values[1])
 			self.setVol(2, int(float(values[2])*100))
 			self.force = int(values[3])
+			initforce = int(values[4])
 		while (self.alive):
 			if ((pygame.mixer.music.get_busy() == 0) and (self.playing == 1)):
 				dprint(self.playNext(flag) + '\n')
+				if (initforce >= 0):
+					self.force = initforce
+					initforce = -1
 				flag = 0
 			elif ((pygame.mixer.music.get_busy() == 1) and (self.playing == 0)):
 				pygame.mixer.music.stop()
