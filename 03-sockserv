@@ -7,8 +7,8 @@ _log_file_ = '/var/log/mp3145.log'
 _server_port_ = 3145
 _server_address_ = '127.0.0.1'
 _music_dir_ = '/home/mp3/music/Various'
-_auto_start_ = 1
-_start_volume_ = 25
+_auto_start_ = 0
+_start_volume_ = 20
 
 #----------------------------------------------------------
 #
