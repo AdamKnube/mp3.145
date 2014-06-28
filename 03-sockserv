@@ -131,6 +131,7 @@ class musicThread(threading.Thread):
 	def setForce(self, force):
 		self.force = force
 		if (force > 0):
+			self.writePersist()
 			return self.playlist[self.force].replace('.mp3', '')
 	def getCurrent(self): return str(self.current) + ': ' + self.playlist[self.current]
 	def playLast(self):
