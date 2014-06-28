@@ -3,12 +3,14 @@
 
 # Global Variables (change these if you must)
 _log_level_ = 0
-_log_file_ = '/var/log/mp3145.log'
+_auto_start_ = 0
+_refresh_rate_ = 21
+_start_volume_ = 0.25
 _server_port_ = 3145
 _server_address_ = '127.0.0.1'
 _music_dir_ = '/home/mp3/music/Various'
-_auto_start_ = 0
-_start_volume_ = 20
+_log_file_ = '/home/mp3/mp3.145/mp3145.log'
+_persistance_ = '/home/mp3/mp3.145/mp3145.cfg'
 
 #----------------------------------------------------------
 #
@@ -29,8 +31,9 @@ def dprint(data = ''):
 	global _log_file_
 	global _log_level_
 	if (_log_level_ > 0):
-		_log_dev_ = open(_log_file_, 'a')
-		print(data, end = '', file = _log_dev_)
+		log_dev = open(_log_file_, 'a')
+		print(data, end = '', file = log_dev)
+		log_dev.close()
 	if (_log_level_ > 1):
 		print(data, end = '')
 	
@@ -53,6 +56,13 @@ class musicThread(threading.Thread):
 		self.setVol(2, _start_volume_)
 		self.playlist = sorted(os.listdir(self.musicdir))	
 		self.lastsong = len(self.playlist)
+	def writePersist(self):
+		sep = ':'
+		global _persistance_
+		data =	str(self.playing) + sep + str(self.shuffle) + sep + str(self.volume) + sep + str(self.current)
+		persist = open(_persistance_, 'w')
+		print(data, end = '', file = persist)
+		persist.close()	
 	def refreshMusic(self):
 		oldcur = self.current
 		if (oldcur != -1):
@@ -66,7 +76,16 @@ class musicThread(threading.Thread):
 					break					
 	def getStatus(self):
 		sep = ':'
-		return str(self.playing) + sep + str(self.shuffle) + sep + str(self.volume) + sep + str(self.force) + sep + self.getCurrent()
+		retme = ''
+		if (self.playing): retme += 'Playing '
+		else: retme +='Stopped on '
+		if (self.current != -1): retme += self.getCurrent() + ', '
+		else: retme += '?: No Song, '
+		if (self.shuffle): retme += 'shuffle is on, '
+		else: retme += 'shuffle is off, '
+		retme += 'volume is ' + str(int(self.volume*100))
+		if (self.force != -1): retme += ', queued ' + str(self.force)
+		return retme
 	def getList(self):
 		return self.playlist
 	def getVol(self):
@@ -139,6 +158,17 @@ class musicThread(threading.Thread):
 	def run(self):
 		refr = 0
 		flag = 0
+		global _persistance_
+		if (os.path.isfile(_persistance_)):
+			persist = open(_persistance_, 'r')
+			conf = persist.readline()
+			persist.close()
+			dprint('Persistance;' + conf)
+			values = conf.split(':')
+			self.playing = int(values[0])
+			self.shuffle = int(values[1])
+			self.volume = float(values[2])
+			self.force = int(values[3])
 		while (self.alive):
 			if ((pygame.mixer.music.get_busy() == 0) and (self.playing == 1)):
 				dprint(self.playNext(flag) + '\n')
@@ -147,9 +177,11 @@ class musicThread(threading.Thread):
 				pygame.mixer.music.stop()
 				flag = 1
 			refr += 1
-			if (refr == 11):
+			global _refresh_rate_
+			if (refr == _refresh_rate_):
 				self.refreshMusic()
 				refr = 0
+			self.writePersist()
 			sleep(0.5)
 
 dprint('Starting music thread...\n')

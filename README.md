@@ -20,3 +20,5 @@ Version History:
 	  web interface.
  + v0.5 - bugfixes and improvements. added searching and custom volume. fixed 
 	  the 'list' command. replaced all regexes with s.find().
+ + v0.6 - added a file that tracks the 'c' command basically to allow resuming
+	  and configuration persistance
