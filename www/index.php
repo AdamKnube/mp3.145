@@ -16,6 +16,7 @@
 			elseif ($_GET['f']) { system('/home/mp3/mp3.145/clients/force ' . $_GET['song']); }
 			elseif ($_GET['s']) { system('/home/mp3/mp3.145/clients/search ' . $_GET['query']); }
 			elseif ($_GET['v']) { system('/home/mp3/mp3.145/clients/volume ' . $_GET['volume']); }
+			else { system('/home/mp3/mp3.145/clients/status'); }
 			echo '</center><br><br>';
 		?>
 		<form method="GET" action="/index.php">

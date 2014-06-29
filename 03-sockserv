@@ -64,6 +64,16 @@ class musicThread(threading.Thread):
 		persist = open(_persistance_, 'w')
 		print(data, end = '', file = persist)
 		persist.close()	
+	def genPlaylist(self):
+		l2cnt = 0
+		list2 = []
+		list1 = sorted(os.listdir(self.musicdir))
+		for x in range(0, len(list1)):
+			if (list1[x].lower.find('.mp3')):
+				list2[l2cnt] = list1[x]	
+				l2cnt += 1	
+			elif (0):
+				print ('wtf')
 	def refreshMusic(self):
 		oldcur = self.current
 		if (oldcur != -1):
