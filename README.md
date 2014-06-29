@@ -22,3 +22,8 @@ Version History:
 	  the 'list' command. replaced all regexes with s.find().
  + v0.6 - added a file that tracks the 'c' command basically to allow resuming
 	  and configuration persistance
+
+
+Todo:
+-----
+ + Make it so aquiring the playlist is a function which is rsync friendly
