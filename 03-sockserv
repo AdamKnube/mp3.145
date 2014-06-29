@@ -133,7 +133,7 @@ class musicThread(threading.Thread):
 		if (force > 0):
 			self.writePersist()
 			return self.playlist[self.force].replace('.mp3', '')
-	def getCurrent(self): return str(self.current) + ': ' + self.playlist[self.current]
+	def getCurrent(self): return str(self.current) + '/' + str(self.lastsong) + ': ' + self.playlist[self.current]
 	def playLast(self):
 		if (self.shuffle == 1):
 			self.setForce(self.previous)
