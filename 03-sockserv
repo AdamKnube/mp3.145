@@ -4,12 +4,12 @@
 # Global Variables (change these if you must)
 _log_level_ = 0
 _auto_start_ = 0
-_refresh_rate_ = 21
+_refresh_rate_ = 60
 _server_port_ = 3145
 _start_volume_ = 25
 _config_sep_ = '|-:;:-|'
 _server_address_ = '127.0.0.1'
-_music_dir_ = '/home/mp3/music/Various'
+_music_dir_ = '/home/mp3/music'
 _log_file_ = '/home/mp3/mp3.145/mp3145.log'
 _persistance_ = '/home/mp3/mp3.145/mp3145.cfg'
 
@@ -55,8 +55,7 @@ class musicThread(threading.Thread):
 		pygame.mixer.init()
 		self.musicdir = music_directory
 		self.setVol(2, _start_volume_, 0)
-		self.playlist = sorted(os.listdir(self.musicdir))	
-		self.lastsong = len(self.playlist)
+		self.playlist = self.genPlaylist()	
 	def writePersist(self):
 		global _config_sep_
 		data =	str(self.playing) + _config_sep_ + str(self.shuffle) + _config_sep_ + str(self.volume + 0.01) + _config_sep_ + str(self.current) + _config_sep_ + str(self.force)
@@ -65,21 +64,20 @@ class musicThread(threading.Thread):
 		print(data, end = '', file = persist)
 		persist.close()	
 	def genPlaylist(self):
-		l2cnt = 0
-		list2 = []
-		list1 = sorted(os.listdir(self.musicdir))
-		for x in range(0, len(list1)):
-			if (list1[x].lower.find('.mp3')):
-				list2[l2cnt] = list1[x]	
-				l2cnt += 1	
-			elif (0):
-				print ('wtf')
+		genlist = []
+		for root, subdirs, thefiles in os.walk(self.musicdir):
+			for name in thefiles:
+				if (name[-4:].lower() == '.mp3'):
+					genlist.append(os.path.join(root, name))
+					dprint('Found: ' + os.path.join(root, name) + '\n')
+			for name in subdirs:
+				dprint(os.path.join(root, name) + '\n')			
+		return sorted(genlist)
 	def refreshMusic(self):
 		oldcur = self.current
 		if (oldcur != -1):
 			oldcur = self.playlist[self.current]
-		self.playlist = sorted(os.listdir(self.musicdir))
-		self.lastsong = len(self.playlist)
+		self.playlist = self.genPlaylist()
 		if (oldcur != -1):
 			for x in range(0, len(self.playlist)):
 				if (self.playlist[x] == oldcur): 
@@ -142,8 +140,9 @@ class musicThread(threading.Thread):
 		self.force = force
 		if (force > 0):
 			self.writePersist()
-			return self.playlist[self.force].replace('.mp3', '')
-	def getCurrent(self): return str(self.current) + '/' + str(self.lastsong) + ': ' + self.playlist[self.current]
+			return self.cleanName(self.playlist[self.force])
+	def getCurrent(self): 
+		return str(self.current) + '/' + str(len(self.playlist)) + ': ' + self.cleanName(self.playlist[self.current])
 	def playLast(self):
 		if (self.shuffle == 1):
 			self.setForce(self.previous)
@@ -151,26 +150,28 @@ class musicThread(threading.Thread):
 		else:
 			self.setForce(self.current - 1)
 			return self.playNext()
+	def cleanName(self, name = ''): 
+		return name[len(self.musicdir):-4].replace(os.sep, ' ')
 	def playNext(self, replay = 0):
 		if (replay == 0):
 			self.previous = self.current
 			if (self.force == -1):
 				if (self.shuffle == 1):
-					self.current = random.randrange(self.lastsong)
+					self.current = random.randrange(len(self.playlist))
 				else:
 					self.current += 1
-					if (self.current >= self.lastsong):
-						self.current = self.current - self.lastsong
+					if (self.current >= len(self.playlist)):
+						self.current = self.current - len(self.playlist)
 			else:
 				self.current = self.force
 				self.force = -1
 		
 		if (pygame.mixer.music.get_busy()):
 			pygame.mixer.music.stop()
-		pygame.mixer.music.load(os.path.join(self.musicdir, self.playlist[self.current]))
+		pygame.mixer.music.load(self.playlist[self.current])
 		pygame.mixer.music.play()	
 		self.writePersist()
-		return self.playlist[self.current].replace('.mp3', '')
+		return self.cleanName(self.playlist[self.current])
 	def run(self):
 		refr = 0
 		flag = 0
@@ -181,7 +182,7 @@ class musicThread(threading.Thread):
 			persist = open(_persistance_, 'r')
 			conf = persist.readline()
 			persist.close()
-			dprint('Persistance;' + conf)
+			dprint('Persistance;' + conf + '\n')
 			values = conf.split(_config_sep_)
 			self.playing = int(values[0])
 			self.shuffle = int(values[1])
@@ -200,7 +201,7 @@ class musicThread(threading.Thread):
 				flag = 1
 			refr += 1
 			global _refresh_rate_
-			if (refr == _refresh_rate_):
+			if (refr == ((_refresh_rate_ * 2) +1)):
 				self.refreshMusic()
 				self.writePersist()
 				refr = 0
@@ -267,7 +268,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				dprint('Sending playlist.\n')
 				self.request.sendall(b'<table style="font-size: 30px">')
 				for x in range(0, len(plist)):
-					self.request.sendall(b'<tr><td>' + str(x).encode('utf-8') + b'</td><td align=center>' + plist[x].replace('.mp3', '').encode('utf-8') + b'</td></tr>\n')
+					self.request.sendall(b'<tr><td>' + str(x).encode('utf-8') + b'</td><td align=center>' + music.cleanName(plist[x]).encode('utf-8') + b'</td></tr>\n')
 				self.request.sendall(b'</table>')
 				self.request.sendall(b'__END_OF_LIST__\n')
 			elif (self.cmd == 's'):
@@ -277,7 +278,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				dprint('Searching for: ' + testme + '\n')
 				for x in range(0, len(plist)):
 					if (plist[x].lower().find(testme) != -1):
-						self.request.sendall(str(x).encode('utf-8') + b': ' + plist[x].encode('utf-8') + b'<br>\n')
+						self.request.sendall(str(x).encode('utf-8') + b': ' + music.cleanName(plist[x]).encode('utf-8') + b'<br>\n')
 						fff += 1
 				self.request.sendall(b'__END_OF_LIST__\n')
 				dprint('Found ' + str(fff) + ' items.\n')
@@ -329,6 +330,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 # Do-it-to-it			
 dprint('Starting TCP server...\n')
 server = socketserver.TCPServer((_server_address_, _server_port_), MyTCPHandler)
-dprint('mp3.145 is ready.\n')
+print('mp3.145 is ready.\n')
 server.serve_forever()
 music.setDie()
