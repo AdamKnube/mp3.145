@@ -3,7 +3,6 @@
 
 # Global Variables (change these if you must)
 _log_level_ = 0
-_auto_start_ = 0
 _refresh_rate_ = 60
 _server_port_ = 3145
 _start_volume_ = 25
@@ -43,12 +42,11 @@ dprint('Loading music thread...\n')
 class musicThread(threading.Thread):
 	def __init__(self, music_directory):
 		threading.Thread.__init__(self)
-		global _auto_start_	
 		global _start_volume_	
 		self.alive = 1
 		self.force = -1
 		self.shuffle = 1
-		self.playing = _auto_start_
+		self.playing = 0
 		self.current = -1
 		self.volume = 0.1
 		self.previous = -1		
