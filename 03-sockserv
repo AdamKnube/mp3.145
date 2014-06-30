@@ -149,7 +149,7 @@ class musicThread(threading.Thread):
 			self.setForce(self.current - 1)
 			return self.playNext()
 	def cleanName(self, name = ''): 
-		return name[len(self.musicdir):-4].replace(os.sep, ' ')
+		return name[len(self.musicdir)+1:-4].replace(os.sep, ' - ')
 	def playNext(self, replay = 0):
 		if (replay == 0):
 			self.previous = self.current
