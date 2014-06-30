@@ -3,9 +3,9 @@
 
 # Global Variables (change these if you must)
 _log_level_ = 0
+_start_volume_ = 15
 _refresh_rate_ = 60
 _server_port_ = 3145
-_start_volume_ = 25
 _config_sep_ = '|-:;:-|'
 _server_address_ = '127.0.0.1'
 _music_dir_ = '/home/mp3/music'
