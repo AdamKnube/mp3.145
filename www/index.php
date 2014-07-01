@@ -36,6 +36,8 @@
 				</center><br><center>
 					<input type="text" value="" name="query" style="width: 400px; height: 120px"/>
 					<input type="submit" value="Search" name="s" style="width: 400px; font-size: 50px; height: 120px"/>
+				</center><br><center>
+					<input type="submit" value="Status" name="wtf" style="width: 400px; font-size: 50px; height: 120px"/>
 				</center></font>				
 			<br><br>
 		</form><center>

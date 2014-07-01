@@ -8,7 +8,7 @@ _refresh_rate_ = 60
 _server_port_ = 3145
 _config_sep_ = '|-:;:-|'
 _server_address_ = '127.0.0.1'
-_music_dir_ = '/home/mp3/music'
+_music_dir_ = '/home/mp3/Music'
 _log_file_ = '/home/mp3/mp3.145/mp3145.log'
 _persistance_ = '/home/mp3/mp3.145/mp3145.cfg'
 
