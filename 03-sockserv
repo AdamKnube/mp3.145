@@ -3,6 +3,7 @@
 
 # Global Variables (change these if you must)
 _log_level_ = 0
+_lag_level_ = 0.2
 _start_volume_ = 15
 _refresh_rate_ = 60
 _server_port_ = 3145
@@ -203,7 +204,8 @@ class musicThread(threading.Thread):
 				self.refreshMusic()
 				self.writePersist()
 				refr = 0
-			sleep(0.5)
+			global _lag_level_
+			sleep(_lag_level_)
 
 dprint('Starting music thread...\n')
 music = musicThread(_music_dir_)
@@ -266,7 +268,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				dprint('Sending playlist.\n')
 				self.request.sendall(b'<table style="font-size: 30px">')
 				for x in range(0, len(plist)):
-					self.request.sendall(b'<tr><td>' + str(x).encode('utf-8') + b'</td><td align=center>' + music.cleanName(plist[x]).encode('utf-8') + b'</td></tr>\n')
+					self.request.sendall(b'<tr><td align=left>' + str(x).encode('utf-8') + b'</td><td align=left>' + music.cleanName(plist[x]).encode('utf-8') + b'</td></tr>\n')
 				self.request.sendall(b'</table>')
 				self.request.sendall(b'__END_OF_LIST__\n')
 			elif (self.cmd == 's'):
