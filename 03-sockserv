@@ -129,6 +129,7 @@ class musicThread(threading.Thread):
 			return self.current
 		else:
 			self.playing = 0
+			self.writePersist()
 		return self.playing
 	def setDie(self):
 		self.playing = 0
