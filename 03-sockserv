@@ -91,7 +91,7 @@ class musicThread(threading.Thread):
 		if (self.shuffle): retme += 'shuffle is on, '
 		else: retme += 'shuffle is off, '
 		retme += 'volume is ' + str(int(self.volume*100))
-		if (self.force != -1): retme += ', queued ' + str(self.force)
+		if (self.force != -1): retme += '. Queued ' + str(self.force) + '/' + str(len(self.playlist)) + ": " + self.cleanName(self.playlist[self.force])
 		return retme
 	def getList(self):
 		return self.playlist
