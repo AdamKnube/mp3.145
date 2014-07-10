@@ -30,6 +30,7 @@ import RPi.GPIO as GPIO
 from Adafruit_CharLCD import Adafruit_CharLCD
 
 GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(0)
 LCD = Adafruit_CharLCD()
 
 # The logger / printer
@@ -146,6 +147,8 @@ class musicThread(threading.Thread):
 		if (force > 0):
 			self.writePersist()
 			return self.cleanName(self.playlist[self.force])
+	def getCurrentNo(self):
+		return self.current
 	def getCurrent(self): 
 		return str(self.current) + '/' + str(len(self.playlist)) + ': ' + self.cleanName(self.playlist[self.current])
 	def playLast(self):
@@ -246,11 +249,11 @@ def lcdPrint(data, resetScroll = 0):
 	part2 = data.partition(' - ')[2].replace('.mp3', '')
 	lcdata = lcdify(part1, resetScroll) + '\n' + lcdify(part2, resetScroll, 1)
 	if (resetScroll == 1):
-		dPrint('Resetting LCD: ' + data)
+		dprint('Resetting LCD: ' + data)
 		resetLCD()
 		LCD.message('%s' % ( lcdata ) )
 	elif ((len(part1) > 16) or (len(part2) > 16)):
-		dPrint('Running LCD Scroll: ' + lcdata.replace('\n', ' - ')) 
+		dprint('Running LCD Scroll: ' + lcdata.replace('\n', ' - ')) 
 		resetLCD()
 		LCD.message('%s' % ( lcdata ) )
 
@@ -268,7 +271,7 @@ class scrollText(threading.Thread):
 		while (self.alive):
 			global music
 			plist = music.getList()
-			current = music.getCurrent()
+			current = music.getCurrentNo()
 			if ((current == -1) and (self.spam == 0)):
 				lcdPrint('mp3.145 - Ready to Rock', 1)
 				self.spam = 1
