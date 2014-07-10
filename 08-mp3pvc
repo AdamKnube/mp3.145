@@ -26,6 +26,11 @@ import pygame
 import threading
 import socketserver
 from time import sleep
+import RPi.GPIO as GPIO	
+from Adafruit_CharLCD import Adafruit_CharLCD
+
+GPIO.setmode(GPIO.BCM)
+LCD = Adafruit_CharLCD()
 
 # The logger / printer
 def dprint(data = ''):
@@ -37,7 +42,7 @@ def dprint(data = ''):
 		log_dev.close()
 	if (_log_level_ > 1):
 		print(data, end = '')
-	
+		
 # The pygame backend
 dprint('Loading music thread...\n')
 class musicThread(threading.Thread):
@@ -211,6 +216,74 @@ class musicThread(threading.Thread):
 dprint('Starting music thread...\n')
 music = musicThread(_music_dir_)
 music.start()
+
+# Resets and clears the L.C.D.
+def resetLCD():
+	global LCD
+	LCD.begin(16,1)
+	LCD.clear()
+
+# Text formatter for the L.C.D.
+def lcdify(data, resetScroll = 0, increment = 0):
+	if (len(data) <= 16):
+		return data
+	elif (resetScroll == 1):
+		lcdify.counter = -1
+		return data[:16]
+	else:
+		if (lcdify.counter > len(data)):
+			lcdify.counter = -1
+		elif (resetScroll != 1):
+			lcdify.counter += increment
+	data += '   '
+	poptext = data[:lcdify.counter]
+	newtext = data[lcdify.counter+1:] + poptext
+	return newtext[:16]
+
+# The LCD communicator
+def lcdPrint(data, resetScroll = 0):
+	part1 = data.partition(' - ')[0]
+	part2 = data.partition(' - ')[2].replace('.mp3', '')
+	lcdata = lcdify(part1, resetScroll) + '\n' + lcdify(part2, resetScroll, 1)
+	if (resetScroll == 1):
+		dPrint('Resetting LCD: ' + data)
+		resetLCD()
+		LCD.message('%s' % ( lcdata ) )
+	elif ((len(part1) > 16) or (len(part2) > 16)):
+		dPrint('Running LCD Scroll: ' + lcdata.replace('\n', ' - ')) 
+		resetLCD()
+		LCD.message('%s' % ( lcdata ) )
+
+# LCD thread
+class scrollText(threading.Thread):
+	global _lag_level_
+	def __init__(self):
+		threading.Thread.__init__(self)
+		self.last = ''
+		self.alive = 1
+		self.spam = 0
+	def setDie(self):
+		self.alive = 0
+	def run(self):			
+		while (self.alive):
+			global music
+			plist = music.getList()
+			current = music.getCurrent()
+			if ((current == -1) and (self.spam == 0)):
+				lcdPrint('mp3.145 - Ready to Rock', 1)
+				self.spam = 1
+			elif (current >= 0):
+				if (self.last != plist[current]):	
+					self.last = plist[current]
+					lcdPrint(plist[current], 1)
+				else:
+					lcdPrint(plist[current])
+			sleep(_lag_level_)
+
+dprint('Starting LCD thread...\n')
+resetLCD()
+lcdThread = scrollText()
+lcdThread.start()
 
 # The socketserver interface
 dprint('Loading TCP server...\n')
