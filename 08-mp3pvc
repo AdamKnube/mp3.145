@@ -2,7 +2,7 @@
 #
 
 # Global Variables (change these if you must)
-_log_level_ = 0
+_log_level_ = 2
 _lag_level_ = 0.25
 _start_volume_ = 15
 _refresh_rate_ = 60
@@ -190,7 +190,7 @@ class musicThread(threading.Thread):
 			persist = open(_persistance_, 'r')
 			conf = persist.readline()
 			persist.close()
-			dprint('Persistance;' + conf + '\n')
+			dprint('Persistance: ' + conf)
 			values = conf.split(_config_sep_)
 			self.playing = int(values[0])
 			self.shuffle = int(values[1])
@@ -249,11 +249,11 @@ def lcdPrint(data, resetScroll = 0):
 	part2 = data.partition(' - ')[2].replace('.mp3', '')
 	lcdata = lcdify(part1, resetScroll) + '\n' + lcdify(part2, resetScroll, 1)
 	if (resetScroll == 1):
-		dprint('Resetting LCD: ' + data)
+		dprint('Resetting LCD: ' + data + '\n')
 		resetLCD()
 		LCD.message('%s' % ( lcdata ) )
 	elif ((len(part1) > 16) or (len(part2) > 16)):
-		dprint('Running LCD Scroll: ' + lcdata.replace('\n', ' - ')) 
+		dprint('Running LCD Scroll: ' + lcdata.replace('\n', ' - ') + '\n') 
 		resetLCD()
 		LCD.message('%s' % ( lcdata ) )
 
