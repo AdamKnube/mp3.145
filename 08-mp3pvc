@@ -296,105 +296,138 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 		dprint(self.client_address[0] + ' has connected.\n')
 		while (self.active):
 			global music			
-			#self.request.sendall(b'Enter command, h for help: ')
 			self.cmd = self.request.recv(1024).strip().decode('utf-8')
 			dprint('Command: <' + self.cmd + '> From: [' + self.client_address[0] + ']\n')
 			plist = music.getList()
 			if (self.cmd == 'h'):				
 				dprint('Sending help.\n')
-				self.request.sendall(b'Commands:\n')
-				self.request.sendall(b'---------\n')
-				self.request.sendall(b'p - play/stop\n')
-				self.request.sendall(b'n - skip/next\n')
-				self.request.sendall(b'b - back/previous\n')
-				self.request.sendall(b'r - random on/off\n')			
-				self.request.sendall(b's - search songs\n')
-				self.request.sendall(b'f - force song\n')
-				self.request.sendall(b'l - list all songs\n')
-				self.request.sendall(b'u - volume +10\n')
-				self.request.sendall(b'd - volume -10\n')
-				self.request.sendall(b'v - custom volume\n')
-				self.request.sendall(b'x - exit\n')
+				try:
+					self.request.sendall(b'Commands:\n')
+					self.request.sendall(b'---------\n')
+					self.request.sendall(b'p - play/stop\n')
+					self.request.sendall(b'n - skip/next\n')
+					self.request.sendall(b'b - back/previous\n')
+					self.request.sendall(b'r - random on/off\n')			
+					self.request.sendall(b's - search songs\n')
+					self.request.sendall(b'f - force song\n')
+					self.request.sendall(b'l - list all songs\n')
+					self.request.sendall(b'u - volume +10\n')
+					self.request.sendall(b'd - volume -10\n')
+					self.request.sendall(b'v - custom volume\n')
+					self.request.sendall(b'x - exit\n')
+				except: 
+					dprint('Failed to send help!\n')
 			elif (self.cmd == 'r'):
-				if (music.setShuffle()):
-					dprint('Random: On.\n')
-					self.request.sendall(b'Random: On\n')
-				else:
-					dprint('Random: Off.\n')
-					self.request.sendall(b'Random: Off\n')
+				try:
+					if (music.setShuffle()):
+						dprint('Random: On.\n')
+						self.request.sendall(b'Random: On\n')
+					else:
+						dprint('Random: Off.\n')
+						self.request.sendall(b'Random: Off\n')
+				except:
+					dprint('Failed to send shuffle/random ACK!\n')
 			elif (self.cmd == 'p'):
-				if (music.setPlay()):
-					dprint('Play.\n')
-					self.request.sendall(b'Play\n')
-				else:
-					dprint('Stop.\n')
-					self.request.sendall(b'Stop\n')
+				try:
+					if (music.setPlay()):
+						dprint('Play.\n')
+						self.request.sendall(b'Play\n')
+					else:
+						dprint('Stop.\n')
+						self.request.sendall(b'Stop\n')
+				except:
+					dprint('Failed to send play/stop ACK!\n')
 			elif (self.cmd == 'n'):
 				tmp = music.playNext() + '\n'
 				dprint(tmp)
-				self.request.sendall(tmp.encode('utf-8'))
+				try:
+					self.request.sendall(tmp.encode('utf-8'))
+				except:
+					dprint('Failed to send next ACK!\n')
 			elif (self.cmd == 'c'):
 				tmp = music.getStatus() + '\n'
 				dprint(tmp)
-				self.request.sendall(tmp.encode('utf-8'))
+				try:
+					self.request.sendall(tmp.encode('utf-8'))
+				except:
+					dprint('Failed to send status!\n')
 			elif (self.cmd == 'b'):
 				tmp = music.playLast() + '\n'
 				dprint(tmp)
-				self.request.sendall(tmp.encode('utf-8'))
+				try:
+					self.request.sendall(tmp.encode('utf-8'))
+				except:
+					dprint('Failed to send back ACK!\n')
 			elif (self.cmd == 'l'):
 				dprint('Sending playlist.\n')
-				self.request.sendall(b'<table style="font-size: 30px">')
-				for x in range(0, len(plist)):
-					self.request.sendall(b'<tr><td align=left>' + str(x).encode('utf-8') + b'</td><td align=left>' + music.cleanName(plist[x]).encode('utf-8') + b'</td></tr>\n')
-				self.request.sendall(b'</table>')
-				self.request.sendall(b'__END_OF_LIST__\n')
+				try:
+					self.request.sendall(b'<table style="font-size: 30px">')
+					for x in range(0, len(plist)):
+						self.request.sendall(b'<tr><td align=left>' + str(x).encode('utf-8') + b'</td><td align=left>' + music.cleanName(plist[x]).encode('utf-8') + b'</td></tr>\n')
+					self.request.sendall(b'</table>')
+					self.request.sendall(b'__END_OF_LIST__\n')
+				except:
+					dprint('Failed to send playlist\n')
 			elif (self.cmd == 's'):
 				fff = 0;
 				self.request.sendall(b'Search string: \n')
 				testme = self.request.recv(1024).strip().decode('utf-8')
 				dprint('Searching for: ' + testme + '\n')
-				for x in range(0, len(plist)):
-					if (plist[x].lower().find(testme) != -1):
-						self.request.sendall(str(x).encode('utf-8') + b': ' + music.cleanName(plist[x]).encode('utf-8') + b'<br>\n')
-						fff += 1
-				self.request.sendall(b'__END_OF_LIST__\n')
-				dprint('Found ' + str(fff) + ' items.\n')
+				try:
+					for x in range(0, len(plist)):
+						if (plist[x].lower().find(testme) != -1):
+							self.request.sendall(str(x).encode('utf-8') + b': ' + music.cleanName(plist[x]).encode('utf-8') + b'<br>\n')
+							fff += 1
+					self.request.sendall(b'__END_OF_LIST__\n')
+					dprint('Found ' + str(fff) + ' items.\n')
+				except:
+					dprint('Failed to send search results!\n')
 			elif (self.cmd == 'f'):
-				while True:
-					try:
-						self.request.sendall(b'Force song: \n')
-						forceme = int(self.request.recv(1024).strip().decode('utf-8'))
-						if ((forceme < 0) or (forceme >= len(plist))):
-							int('fail')
-						break
-					except ValueError:
-						self.request.sendall(b'Invalid; Try Again\n')
-				tmp = 'Queued: ' + music.setForce(forceme) + '\n'	
-				dprint(tmp)
-				self.request.sendall(tmp.encode('utf-8'))
+				forceme = 0
+				try:
+					self.request.sendall(b'Force song: \n')
+					forceme = int(self.request.recv(1024).strip().decode('utf-8'))
+					if ((forceme < 0) or (forceme >= len(plist))):
+						int('fail')
+					dprint(tmp)
+					self.request.sendall(tmp.encode('utf-8'))						
+				except ValueError:
+					dprint('Invalid force: ' + str(forceme))
+				except:
+					dprint('Failed to send force ACK!\n')
 			elif (self.cmd == 'u'):
 				tmp = 'Volume: ' + music.setVol(1) + '\n'
 				dprint(tmp)
-				self.request.sendall(tmp.encode('utf-8'))
+				try:
+					self.request.sendall(tmp.encode('utf-8'))
+				except:
+					dprint('Failed to send volume_up ACK!\n')
 			elif (self.cmd == 'd'):
 				tmp = 'Volume: ' + music.setVol() + '\n'
 				dprint(tmp)
-				self.request.sendall(tmp.encode('utf-8'))
+				try:
+					self.request.sendall(tmp.encode('utf-8'))
+				except:
+					dprint('Failed to send volume_down ACK!\n')
 			elif (self.cmd == 'v'):
-				while True:
-					try:
-						self.request.sendall(b'New volume (current=' + music.getVol().encode('utf-8') + b') [1-100] : \n')
-						newvol = int(self.request.recv(1024).strip().decode('utf-8'))
-						if ((newvol < 0) or (newvol > 100)):
-							int('fail')
-						tmp = 'Volume: ' + str(music.setVol(2, newvol)) + '\n'
-						dprint(tmp)
-						self.request.sendall(tmp.encode('utf-8'))
-						break
-					except ValueError:
-						self.request.sendall(b'Error: Try Again\n')
+				newvol = 0
+				try:
+					self.request.sendall(b'New volume (current=' + music.getVol().encode('utf-8') + b') [1-100] : \n')
+					newvol = int(self.request.recv(1024).strip().decode('utf-8'))
+					if ((newvol < 0) or (newvol > 100)):
+						int('fail')
+					tmp = 'Volume: ' + str(music.setVol(2, newvol)) + '\n'
+					dprint(tmp)
+					self.request.sendall(tmp.encode('utf-8'))
+				except ValueError:
+					dprint('Invalid volume force: ' + str(newvol))
+				except: 
+					dprint('Failed to send volume_custom ACK!\n')
 			elif (self.cmd == 'x'):
-				self.request.sendall(b'Goodbye.\n')
+				try:
+					self.request.sendall(b'Goodbye.\n')
+				except:
+					dprint('Failed to send exit ACK!\n')
 				dprint('Disconnecting ' + self.client_address[0] + '\n')
 				self.active = 0
 			elif (self.cmd == 'halt'):
@@ -402,8 +435,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				sleep(5)
 				exit(0)
 			else:
-				self.request.sendall(b'Unknown command: ' + self.cmd.encode('utf-8') + b'\n')
-	
+				try:
+					self.request.sendall(b'Unknown command: ' + self.cmd.encode('utf-8') + b'\n')
+				except:
+					dprint('Failed to send unknown_command ACK!\n')
 # Do-it-to-it			
 dprint('Starting TCP server...\n')
 server = socketserver.TCPServer((_server_address_, _server_port_), MyTCPHandler)
