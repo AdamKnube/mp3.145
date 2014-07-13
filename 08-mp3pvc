@@ -249,7 +249,7 @@ def lcdPrint(data, resetScroll = 0):
 	part2 = data.partition(' - ')[2].replace('.mp3', '')
 	lcdata = lcdify(part1, resetScroll) + '\n' + lcdify(part2, resetScroll, 1)
 	if (resetScroll == 1):
-		dprint('Resetting LCD: ' + data + '\n')
+		dprint('Resetting LCD: ' + lcdata.replace('\n', ' - ') + '\n')
 		resetLCD()
 		LCD.message('%s' % ( lcdata ) )
 	elif ((len(part1) > 16) or (len(part2) > 16)):
