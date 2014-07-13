@@ -245,8 +245,9 @@ def lcdify(data, resetScroll = 0, increment = 0):
 
 # The LCD communicator
 def lcdPrint(data, resetScroll = 0):
-	part1 = data.partition(' - ')[0]
-	part2 = data.partition(' - ')[2].replace('.mp3', '')
+	data.replace(_music_dir_, '')
+	part1 = data.partition(' - ')[:-2]
+	part2 = data.partition(' - ')[:-1].replace('.mp3', '')
 	lcdata = lcdify(part1, resetScroll) + '\n' + lcdify(part2, resetScroll, 1)
 	if (resetScroll == 1):
 		dprint('Resetting LCD: ' + lcdata.replace('\n', ' - ') + '\n')
