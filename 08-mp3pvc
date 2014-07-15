@@ -2,10 +2,10 @@
 #
 
 # Global Variables (change these if you must)
-_log_level_ = 2
+_log_level_ = 0
 _lag_level_ = 0.25
 _start_volume_ = 15
-_refresh_rate_ = 60
+_refresh_rate_ = (60 * 5)
 _server_port_ = 3145
 _config_sep_ = '|-:;:-|'
 _server_address_ = '127.0.0.1'
@@ -38,11 +38,11 @@ def dprint(data = ''):
 	global _log_file_
 	global _log_level_
 	if (_log_level_ > 0):
+		print(data, end = '')
+	if (_log_level_ > 1):
 		log_dev = open(_log_file_, 'a')
 		print(data, end = '', file = log_dev)
 		log_dev.close()
-	if (_log_level_ > 1):
-		print(data, end = '')
 		
 # The pygame backend
 dprint('Loading music thread...\n')
@@ -208,12 +208,12 @@ class musicThread(threading.Thread):
 				pygame.mixer.music.stop()
 				flag = 1
 			refr += 1
+			global _lag_level_
 			global _refresh_rate_
-			if (refr == ((_refresh_rate_ * 2) +1)):
+			if (refr == ((_refresh_rate_ * (1 / _lag_level_)) +1)):
 				self.refreshMusic()
 				self.writePersist()
 				refr = 0
-			global _lag_level_
 			sleep(_lag_level_)
 
 dprint('Starting music thread...\n')
@@ -245,10 +245,18 @@ def lcdify(data, resetScroll = 0, increment = 0):
 
 # The LCD communicator
 def lcdPrint(data, resetScroll = 0):
-	data.replace(_music_dir_, '')
-	part1 = data.partition(' - ')[:-2]
-	part2 = data.partition(' - ')[:-1].replace('.mp3', '')
-	lcdata = lcdify(part1, resetScroll) + '\n' + lcdify(part2, resetScroll, 1)
+	global _music_dir_
+	data = data.replace(_music_dir_ + '/', '')
+	songbits = data.split(' - ')
+	part1 = songbits[len(songbits) - 2]
+	part2 = songbits[len(songbits) - 1].replace('.mp3', '')
+	try:
+		if (int(part1)):
+			part2 = part1 + ': ' + part2			
+			part1 = songbits[len(songbits) - 3]
+	except ValueError:
+		pass
+	lcdata = lcdify(part1, resetScroll, 1) + '\n' + lcdify(part2, resetScroll, 1)
 	if (resetScroll == 1):
 		dprint('Resetting LCD: ' + lcdata.replace('\n', ' - ') + '\n')
 		resetLCD()
@@ -282,6 +290,7 @@ class scrollText(threading.Thread):
 					lcdPrint(plist[current], 1)
 				else:
 					lcdPrint(plist[current])
+			global _lag_level_
 			sleep(_lag_level_)
 
 dprint('Starting LCD thread...\n')
