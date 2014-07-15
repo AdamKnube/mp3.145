@@ -399,6 +399,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 					forceme = int(self.request.recv(1024).strip().decode('utf-8'))
 					if ((forceme < 0) or (forceme >= len(plist))):
 						int('fail')
+					tmp = music.setForce(forceme)
 					dprint(tmp)
 					self.request.sendall(tmp.encode('utf-8'))						
 				except ValueError:
