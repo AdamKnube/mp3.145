@@ -207,13 +207,13 @@ class musicThread(threading.Thread):
 			elif ((pygame.mixer.music.get_busy() == 1) and (self.playing == 0)):
 				pygame.mixer.music.stop()
 				flag = 1
-			refr += 1
+			#refr += 1
+			#global _refresh_rate_
+			#if (refr == ((_refresh_rate_ * (1 / _lag_level_)) +1)):
+				#self.refreshMusic()
+				#self.writePersist()
+				#refr = 0
 			global _lag_level_
-			global _refresh_rate_
-			if (refr == ((_refresh_rate_ * (1 / _lag_level_)) +1)):
-				self.refreshMusic()
-				self.writePersist()
-				refr = 0
 			sleep(_lag_level_)
 
 dprint('Starting music thread...\n')
