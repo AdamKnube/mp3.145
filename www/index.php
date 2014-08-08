@@ -40,9 +40,6 @@
 					<input type="submit" value="Status" name="wtf" style="width: 400px; font-size: 50px; height: 120px"/>
 				</center></font>				
 			<br><br>
-		</form><center>
-			<h2><u><font color="#00FF00">Song List:</font></u></h2>
-			<?php system('/home/mp3/mp3.145/clients/list'); ?>
-		</center>
+		</form>
 	</body>
 </html>
