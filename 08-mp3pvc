@@ -381,7 +381,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 			elif (self.cmd == 's'):
 				fff = 0;
 				self.request.sendall(b'Search string: \n')
-				testme = self.request.recv(1024).strip().decode('utf-8')
+				testme = self.request.recv(1024).strip().decode('utf-8').lower()
 				dprint('Searching for: ' + testme + '\n')
 				try:
 					for x in range(0, len(plist)):
