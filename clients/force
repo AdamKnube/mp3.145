@@ -9,7 +9,7 @@ cmd = 'f\n'
 try:
   v = sys.argv[1]
 except:
-  print('You need to input a song number!')
+  print('You forgot to input a song number!')
   exit(1)
 c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 c.connect(('127.0.0.1', 3145))

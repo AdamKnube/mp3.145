@@ -9,8 +9,8 @@ cmd = 's\n'
 try:
 	v = sys.argv[1]
 except:
-	print('You forgot a search string!')
-	exit(0)
+	print('You forgot to input a search string!')
+	exit(1)
 c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 c.connect(('127.0.0.1', 3145))
 #print('Connected')
