@@ -1,0 +1,11 @@
+#!/usr/bin/perl
+use strict;
+my $p = shift(@ARGV);
+if ((!$p) || ($p !~ /^(\d+)\%$/)) { exit(0); } 
+$p =~ s/\%$//;
+my $i = int($p);
+if (($i >= 25) && ($i <= 100)) { 
+  my $m = $i / 100;
+  my $r = (40 * $m) + 60;
+  exec("amixer -c 0 set PCM $r%");
+}

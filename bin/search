@@ -1,0 +1,35 @@
+#!/usr/bin/perl
+#
+
+my $search4 = "@ARGV";
+if (!$search4) { 
+  print "No search term!<br>\n";  
+  exit(0);
+};
+my $basedir = '/usr/share/music';
+
+#####################################################
+
+my @found;
+my $count = 0;
+my @musicdirs = ($basedir);
+while (@musicdirs) { 
+  my $thisdir = $musicdirs[0];
+  opendir(THEDIR, $thisdir);
+  my @contents = readdir(THEDIR);
+  close(THEDIR);
+  foreach my $item (@contents) {
+    my $fullname = $thisdir . '/' . $item; 
+    if ((-d $fullname) && ($item !~ /^\./)) { push(@musicdirs, $fullname); }
+    elsif (($item =~ /\.mp3$/i) && ($item =~ /$search4/i)) { push(@found, $count . ': ' . $item); }
+    $count++;
+  } 
+  shift(@musicdirs);
+}
+if (@found) { 
+  foreach my $f (@found) { 
+    my @uglyhack = split(/:/, $f);
+    print "<a href=\"/index.php?force=true&what=$uglyhack[0]\">$f</a><br><br>\n"; }
+}
+else { print "Search for $search4 failed<br>\n"; }
+exit(0);

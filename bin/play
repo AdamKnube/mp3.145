@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+#
+my $search4 = shift(@ARGV);
+if (!$search4) { $search4 = 200; };
+$search4 = int($search4);
+my $basedir = '/usr/share/music';
+my @found;
+my $count = 0;
+my @musicdirs = ($basedir);
+while (@musicdirs) { 
+  my $thisdir = $musicdirs[0];
+  opendir(THEDIR, $thisdir);
+  my @contents = readdir(THEDIR);
+  close(THEDIR);
+  foreach my $item (@contents) {
+    my $fullname = $thisdir . '/' . $item; 
+    if ((-d $fullname) && ($item !~ /^\./)) { push(@musicdirs, $fullname); }
+    elsif (($item =~ /\.mp3$/i) && ($count == $search4)) { 
+      system("/home/thepub/bin/stop -q");
+      system("/usr/bin/mpg123 -q \"$fullname\" > /dev/null &");
+      exit(0);
+    }
+    $count++;
+  } 
+  shift(@musicdirs);
+}
+exit(0);
