@@ -8,5 +8,6 @@ Description:
 
 Version History:
 ----------------
+ + v1.01 - Security fix for the user input on the website.
  + v1.00 - Complete re-write. Dropped the daemon for live streaming and single play mp3s.
 
