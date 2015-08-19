@@ -21,7 +21,7 @@ while (@musicdirs) {
   foreach my $item (@contents) {
     my $fullname = $thisdir . '/' . $item; 
     if ((-d $fullname) && ($item !~ /^\./)) { push(@musicdirs, $fullname); }
-    elsif (($item =~ /\.mp3$/i) && ($item =~ /$search4/i)) { push(@found, $count . ': ' . $item); }
+    elsif (($item =~ /\.mp3$/i) && (($item =~ /$search4/i) || ($thisdir =~ /$search4/i))) { push(@found, $count . ': ' . $item); }
     $count++;
   } 
   shift(@musicdirs);
