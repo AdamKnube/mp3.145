@@ -1,3 +1,3 @@
 #!/usr/bin/bash
-/home/thepub/bin/stop
+/home/http/bin/stop
 /usr/bin/curl -s http://live.leanstream.co/CFPLFM-MP3?socast_mobile | /usr/bin/mpg123 -q -

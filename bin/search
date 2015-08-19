@@ -6,7 +6,7 @@ if (!$search4) {
   print "No search term!<br>\n";  
   exit(0);
 };
-my $basedir = '/usr/share/music';
+my $basedir = '/media/audio/music';
 
 #####################################################
 
