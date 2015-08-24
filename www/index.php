@@ -2,7 +2,7 @@
 	<head>
 		<title>Mp3.145 Web Interface</title>
 		<?php
-			$thispage = $_SERVER['SERVER_ADDR'] . '/' . $_SERVER['PHP_SELF'];
+			$thispage = $_SERVER['SERVER_ADDR'] . $_SERVER['PHP_SELF'];
 			echo "<meta http-equiv=\"refresh\" content=\"300\"; url=\"http://$thispage\">";
 			echo '<style>
 				td { 
