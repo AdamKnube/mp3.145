@@ -2,16 +2,13 @@
 #
 
 # Global Variables (change these if you must)
-_log_level_ = 0
-_lag_level_ = 0.25
+_log_level_ = 2
 _start_volume_ = 15
-_refresh_rate_ = 60
 _server_port_ = 3145
-_config_sep_ = '|-:;:-|'
+_refresh_rate_ = 600
 _server_address_ = '127.0.0.1'
-_music_dir_ = '/home/mp3/Music'
-_log_file_ = '/home/mp3/mp3.145/mp3145.log'
-_persistance_ = '/home/mp3/mp3.145/mp3145.cfg'
+_music_dir_ = '/store/Media/Audio/Music'
+_log_file_ = '/root/src/mp3.145/mp3145.log'
 
 #----------------------------------------------------------
 #
@@ -47,41 +44,36 @@ class musicThread(threading.Thread):
 		self.alive = 1
 		self.force = -1
 		self.shuffle = 1
-		self.playing = 0
+		self.playing = 0		
 		self.current = -1
 		self.volume = 0.1
-		self.previous = -1		
+		self.playlist = []
 		pygame.mixer.init()
 		self.musicdir = music_directory
-		self.setVol(2, _start_volume_, 0)
-		self.playlist = self.genPlaylist()	
-	def writePersist(self):
-		global _config_sep_
-		data =	str(self.playing) + _config_sep_ + str(self.shuffle) + _config_sep_ + str(self.volume + 0.01) + _config_sep_ + str(self.current) + _config_sep_ + str(self.force)
-		global _persistance_
-		persist = open(_persistance_, 'w')
-		print(data + '\n', end = '', file = persist)
-		persist.close()	
-	def genPlaylist(self):
+		self.setVol(2, _start_volume_)
+		self.refreshMusic()
+	def refreshMusic(self):
 		genlist = []
 		for root, subdirs, thefiles in os.walk(self.musicdir):
 			for name in thefiles:
 				if (name[-4:].lower() == '.mp3'):
 					genlist.append(os.path.join(root, name))
-					dprint('Found: ' + os.path.join(root, name) + '\n')
+					#dprint('Found: ' + os.path.join(root, name) + '\n')
 			for name in subdirs:
 				dprint(os.path.join(root, name) + '\n')			
-		return sorted(genlist)
-	def refreshMusic(self):
-		oldcur = self.current
-		if (oldcur != -1):
-			oldcur = self.playlist[self.current]
-		self.playlist = self.genPlaylist()
-		if (oldcur != -1):
-			for x in range(0, len(self.playlist)):
-				if (self.playlist[x] == oldcur): 
-					self.current = x
-					break					
+		if (sorted(genlist) != sorted(self.playlist)):
+			dprint("Playlists differ, re-calculating... ")
+			if (self.shuffle): random.shuffle(genlist)
+			else: genlist = sorted(genlist)
+			if (self.current > -1):
+				oldcur = self.playlist[self.current]			
+				for x in range(0, len(genlist)):
+					if (genlist[x] == oldcur): 
+						self.current = x
+						dprint('Found CURRENT at: #' + x + '\n')
+						break
+			else: dprint('No current song playing\n')
+			self.playlist = genlist
 	def getStatus(self):
 		retme = ''
 		if (self.playing): retme += 'Playing '
@@ -97,7 +89,7 @@ class musicThread(threading.Thread):
 		return self.playlist
 	def getVol(self):
 		return str(self.volume * 100)
-	def setVol(self, upordown = -1, forcevol = 10, persist = 1):
+	def setVol(self, upordown = -1, forcevol = 10):
 		newvol = self.volume
 		if (upordown == 2):
 			newvol = (forcevol / 100)
@@ -111,102 +103,71 @@ class musicThread(threading.Thread):
 			newvol = 0.0
 		pygame.mixer.music.set_volume(newvol)
 		self.volume = pygame.mixer.music.get_volume()
-		if (persist): self.writePersist()
 		return str(self.volume * 100)
 	def setShuffle(self):
 		if (self.shuffle == 0):
 			self.shuffle = 1
+			random.shuffle(self.playlist)
 		else:
 			self.shuffle = 0
-		self.writePersist()
+			self.playlist = sorted(self.playlist)
 		return self.shuffle
 	def setPlay(self):
 		if (self.playing == 0):
 			self.playing = 1
 			while (pygame.mixer.music.get_busy() != 1):
 				sleep(0.1)
-			self.writePersist()
-			return self.current
+			return True
 		else:
 			self.playing = 0
-			self.writePersist()
-		return self.playing
+			return False
 	def setDie(self):
 		self.playing = 0
-		self.writePersist()
 		sleep(1)
 		self.alive = 0
 	def setForce(self, force):
 		self.force = force
 		if (force > 0):
-			self.writePersist()
 			return self.cleanName(self.playlist[self.force])
 	def getCurrent(self): 
 		return str(self.current) + '/' + str(len(self.playlist)) + ': ' + self.cleanName(self.playlist[self.current])
 	def playLast(self):
-		if (self.shuffle == 1):
-			self.setForce(self.previous)
-			return self.playNext()
-		else:
+		if (self.current > 0):
 			self.setForce(self.current - 1)
-			return self.playNext()
+		else:
+			self.setForce(len(self.playlist) - 1)	
+		return self.playNext()
 	def cleanName(self, name = ''): 
 		return name[len(self.musicdir)+1:-4].replace(os.sep, ' - ')
-	def playNext(self, replay = 0):
-		if (replay == 0):
-			self.previous = self.current
-			if (self.force == -1):
-				if (self.shuffle == 1):
-					self.current = random.randrange(len(self.playlist))
-				else:
-					self.current += 1
-					if (self.current >= len(self.playlist)):
-						self.current = self.current - len(self.playlist)
-			else:
-				self.current = self.force
-				self.force = -1
+	def playNext(self):
+		self.previous = self.current
+		if (self.force == -1):
+			self.current += 1
+			if (self.current >= len(self.playlist)):
+				self.current = self.current - len(self.playlist)
+		else:
+			self.current = self.force
+			self.force = -1
 		
 		if (pygame.mixer.music.get_busy()):
 			pygame.mixer.music.stop()
 		pygame.mixer.music.load(self.playlist[self.current])
 		pygame.mixer.music.play()	
-		self.writePersist()
 		return self.cleanName(self.playlist[self.current])
 	def run(self):
 		refr = 0
-		flag = 0
-		initforce = -1
-		global _persistance_
-		if (os.path.isfile(_persistance_)):
-			global _config_sep_
-			persist = open(_persistance_, 'r')
-			conf = persist.readline()
-			persist.close()
-			dprint('Persistance;' + conf + '\n')
-			values = conf.split(_config_sep_)
-			self.playing = int(values[0])
-			self.shuffle = int(values[1])
-			self.setVol(2, int(float(values[2])*100))
-			self.force = int(values[3])
-			initforce = int(values[4])
 		while (self.alive):
 			if ((pygame.mixer.music.get_busy() == 0) and (self.playing == 1)):
-				dprint(self.playNext(flag) + '\n')
-				if (initforce >= 0):
-					self.force = initforce
-					initforce = -1
-				flag = 0
+				dprint(self.playNext() + '\n')
 			elif ((pygame.mixer.music.get_busy() == 1) and (self.playing == 0)):
 				pygame.mixer.music.stop()
-				flag = 1
 			refr += 1
 			global _refresh_rate_
-			if (refr == ((_refresh_rate_ * 2) +1)):
+			if (refr == ((_refresh_rate_ * 4) + 1)):
 				self.refreshMusic()
-				self.writePersist()
 				refr = 0
 			global _lag_level_
-			sleep(_lag_level_)
+			sleep(0.25)
 
 dprint('Starting music thread...\n')
 music = musicThread(_music_dir_)
@@ -238,6 +199,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				self.request.sendall(b'u - volume +10\n')
 				self.request.sendall(b'd - volume -10\n')
 				self.request.sendall(b'v - custom volume\n')
+				self.request.sendall(b'c - current status\n')
 				self.request.sendall(b'x - exit\n')
 			elif (self.cmd == 'r'):
 				if (music.setShuffle()):
@@ -322,9 +284,13 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				dprint('Disconnecting ' + self.client_address[0] + '\n')
 				self.active = 0
 			elif (self.cmd == 'halt'):
+				self.active = 0
+				dprint('Shutting down... \n')
+				print('Shutting down... \n')
+				self.request.sendall(b'Shutting down... Goodbye.\n')
+				self.request.close()		
 				music.setDie()
-				sleep(5)
-				exit(0)
+				self.shutdown()
 			else:
 				self.request.sendall(b'Unknown command: ' + self.cmd.encode('utf-8') + b'\n')
 	
@@ -333,4 +299,4 @@ dprint('Starting TCP server...\n')
 server = socketserver.TCPServer((_server_address_, _server_port_), MyTCPHandler)
 print('mp3.145 is ready.\n')
 server.serve_forever()
-music.setDie()
+exit(0)
