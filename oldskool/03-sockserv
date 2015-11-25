@@ -2,7 +2,7 @@
 #
 
 # Global Variables (change these if you must)
-_log_level_ = 2
+_log_level_ = 0
 _start_volume_ = 15
 _server_port_ = 3145
 _refresh_rate_ = 600
@@ -59,8 +59,8 @@ class musicThread(threading.Thread):
 				if (name[-4:].lower() == '.mp3'):
 					genlist.append(os.path.join(root, name))
 					#dprint('Found: ' + os.path.join(root, name) + '\n')
-			for name in subdirs:
-				dprint(os.path.join(root, name) + '\n')			
+			#for name in subdirs:
+				#dprint(os.path.join(root, name) + '\n')			
 		if (sorted(genlist) != sorted(self.playlist)):
 			dprint("Playlists differ, re-calculating... ")
 			if (self.shuffle): random.shuffle(genlist)
@@ -70,7 +70,7 @@ class musicThread(threading.Thread):
 				for x in range(0, len(genlist)):
 					if (genlist[x] == oldcur): 
 						self.current = x
-						dprint('Found CURRENT at: #' + x + '\n')
+						dprint('Found CURRENT at: #' + str(x) + '\n')
 						break
 			else: dprint('No current song playing\n')
 			self.playlist = genlist
@@ -105,12 +105,21 @@ class musicThread(threading.Thread):
 		self.volume = pygame.mixer.music.get_volume()
 		return str(self.volume * 100)
 	def setShuffle(self):
+		newlist = sorted(self.playlist)
 		if (self.shuffle == 0):
 			self.shuffle = 1
-			random.shuffle(self.playlist)
+			random.shuffle(newlist)
 		else:
 			self.shuffle = 0
-			self.playlist = sorted(self.playlist)
+		if (self.current > -1):
+			oldcur = self.playlist[self.current]			
+			for x in range(0, len(newlist)):
+				if (newlist[x] == oldcur): 
+					self.current = x
+					dprint('Found CURRENT at: #' + str(x) + '\n')
+					break
+		else: dprint('No current song playing\n')
+		self.playlist = newlist 
 		return self.shuffle
 	def setPlay(self):
 		if (self.playing == 0):
@@ -158,6 +167,8 @@ class musicThread(threading.Thread):
 		refr = 0
 		while (self.alive):
 			if ((pygame.mixer.music.get_busy() == 0) and (self.playing == 1)):
+				#uglyhack
+				if (self.current > -1): self.current = self.current - 1
 				dprint(self.playNext() + '\n')
 			elif ((pygame.mixer.music.get_busy() == 1) and (self.playing == 0)):
 				pygame.mixer.music.stop()
@@ -201,6 +212,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				self.request.sendall(b'v - custom volume\n')
 				self.request.sendall(b'c - current status\n')
 				self.request.sendall(b'x - exit\n')
+				self.request.sendall(b'halt - shut-down the server\n')
 			elif (self.cmd == 'r'):
 				if (music.setShuffle()):
 					dprint('Random: On.\n')
@@ -290,13 +302,14 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 				self.request.sendall(b'Shutting down... Goodbye.\n')
 				self.request.close()		
 				music.setDie()
-				self.shutdown()
+				int('fuck your hat')
 			else:
 				self.request.sendall(b'Unknown command: ' + self.cmd.encode('utf-8') + b'\n')
-	
+
 # Do-it-to-it			
 dprint('Starting TCP server...\n')
 server = socketserver.TCPServer((_server_address_, _server_port_), MyTCPHandler)
 print('mp3.145 is ready.\n')
-server.serve_forever()
+try: server.serve_forever()
+except: server.shutdown()
 exit(0)
