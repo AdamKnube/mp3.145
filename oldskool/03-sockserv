@@ -6,7 +6,7 @@ _log_level_ = 1
 _start_volume_ = 15
 _server_port_ = 3145
 _refresh_rate_ = 600
-_server_address_ = '127.0.0.1'
+_server_address_ = '0.0.0.0'
 _music_dir_ = '/store/Media/Audio/Music'
 _log_file_ = '/root/src/mp3.145/mp3145.log'
 
